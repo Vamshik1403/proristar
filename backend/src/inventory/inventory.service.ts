@@ -27,19 +27,14 @@ export class InventoryService {
             ? new Date(data.InitialSurveyDate).toISOString()
             : new Date().toISOString(),
 
-          periodicTankCertificates: {
-            create:
-              data.periodicTankCertificates?.map((cert) => ({
-                inspectionDate: cert.inspectionDate
-                  ? new Date(cert.inspectionDate)
-                  : new Date(),
-                inspectionType: cert.inspectionType,
-                nextDueDate: cert.nextDueDate
-                  ? new Date(cert.nextDueDate)
-                  : new Date(),
-                certificate: cert.certificate ?? '',
-              })) || [],
-          },
+            periodicTankCertificates: {
+        create: data.periodicTankCertificates?.map((cert) => ({
+          inspectionDate: cert.inspectionDate ? new Date(cert.inspectionDate) : new Date(),
+          inspectionType: cert.inspectionType,
+          nextDueDate: cert.nextDueDate ? new Date(cert.nextDueDate) : new Date(),
+          certificate: typeof cert.certificate === 'string' ? cert.certificate : '',
+        })) || [],
+      },
 
           leasingInfo: {
             create:

@@ -162,13 +162,16 @@ const AddInventoryForm: React.FC<InventoryFormProps> = ({
         // For "Own" containers, we need to populate the conditional fields
         if (displayOwnership === "Own") {
           // Set the on-hire location (port name) and depot data in the main form
-          const portName = record.port?.portName || "";
+          const matchedPort = allPorts.find(p => p.id === record.portId);
+          const portName = matchedPort?.portName || record.port?.portName || "";
+
           const depotId = record.onHireDepotaddressbookId || "";
 
           setFormData(prev => ({
             ...prev,
-            onHireLocation: portName,
-            onHireDepotaddressbookId: depotId
+            onHireLocation: portName, // ✅ guaranteed to match dropdown value
+            onHireDepotaddressbookId: depotId,
+            onHireDepotName: record.onHireDepotAddressBook?.companyName || ""
           }));
 
           // Set the selected hire depot ID for the depot dropdown
@@ -214,7 +217,6 @@ const AddInventoryForm: React.FC<InventoryFormProps> = ({
           };
         });
 
-        console.log("Processed leasing records:", existingLeasingRecords);
         setLeasingRecords(existingLeasingRecords);
 
         // Filter depots for each record that has a port
@@ -232,18 +234,19 @@ const AddInventoryForm: React.FC<InventoryFormProps> = ({
 
       // Preserve existing certificates with isModified=false
       if (tempEditData.periodicTankCertificates) {
-        const existingCertificates = tempEditData.periodicTankCertificates.map((cert: any) => ({
-          id: cert.id,
-          inspectionDate: cert.inspectionDate ? new Date(cert.inspectionDate).toISOString().split('T')[0] : "",
-          inspectionType: cert.inspectionType || "",
-          nextDueDate: cert.nextDueDate ? new Date(cert.nextDueDate).toISOString().split('T')[0] : "",
-          certificateFile: null,  // We can't load the file itself
-          certificate: cert.certificate, // Keep filename reference
-          isNew: false,
-          isModified: false
-        }));
-        setCertificates(existingCertificates);
-      }
+  const existingCertificates = tempEditData.periodicTankCertificates.map((cert: any) => ({
+    id: cert.id,
+    inspectionDate: cert.inspectionDate ? new Date(cert.inspectionDate).toISOString().split('T')[0] : "",
+    inspectionType: cert.inspectionType || "",
+    nextDueDate: cert.nextDueDate ? new Date(cert.nextDueDate).toISOString().split('T')[0] : "",
+    certificateFile: null, 
+    certificateFilename: cert.certificate, 
+    isNew: false,
+    isModified: false,
+  }));
+  setCertificates(existingCertificates);
+}
+
 
       // For reports, we need to preserve the document filename
       if (tempEditData.onHireReport) {
@@ -277,6 +280,8 @@ const AddInventoryForm: React.FC<InventoryFormProps> = ({
 
     fetchPorts();
   }, []);
+
+
 
   // Store all depot terminals without filtering
   const [allDepotTerminals, setAllDepotTerminals] = useState<{
@@ -413,8 +418,20 @@ const AddInventoryForm: React.FC<InventoryFormProps> = ({
         if (ownRecord.port?.portName) {
           setFormData(prev => ({
             ...prev,
+            port: ownRecord.port.portName,
             onHireLocation: ownRecord.port.portName
           }));
+        }
+
+        if (ownRecord.portId) {
+          const selectedPort = allPorts.find(port => port.id === ownRecord.portId);
+          if (selectedPort) {
+            setFormData(prev => ({
+              ...prev,
+              port: selectedPort.portName,
+              onHireLocation: selectedPort.portName
+            }));
+          }
         }
 
         if (ownRecord.onHireDepotaddressbookId) {
@@ -490,7 +507,6 @@ const AddInventoryForm: React.FC<InventoryFormProps> = ({
     }
   };
 
-  // Add certificate
 
   // Remove certificate
   const handleDeleteCertificate = (idx: number) => {
@@ -642,168 +658,168 @@ const AddInventoryForm: React.FC<InventoryFormProps> = ({
 
 
   // Modify handleSubmit function to collect all leasing records
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-  if (!formData.containerNumber) {
-    alert("Container Number is required");
-    return;
-  }
-
-  const payload: any = {
-    status: formData.status,
-    containerNumber: formData.containerNumber,
-    containerCategory: formData.containerCategory,
-    containerType: formData.containerType,
-    containerSize: formData.containerSize,
-    containerClass: formData.containerClass,
-    containerCapacity: formData.containerCapacity,
-    capacityUnit: formData.capacityUnit,
-    manufacturer: formData.manufacturer,
-    buildYear: formData.buildYear,
-    grossWeight: formData.grossWeight,
-    tareWeight: formData.tareWeight,
-    InitialSurveyDate: formData.initialSurveyDate,
-
-    periodicTankCertificates: certificates.map((c) => ({
-      id: c.id || undefined,
-      inspectionDate: c.inspectionDate,
-      inspectionType: c.inspectionType,
-      nextDueDate: c.nextDueDate,
-      certificate:
-        typeof c.certificate === "string"
-          ? c.certificate
-          : c.certificateFile?.name || null,
-    })),
-
-    onHireReport: reports.map((r) => ({
-      id: r.id || undefined,
-      reportDate: r.reportDate,
-      reportDocument: typeof r.reportDocument === "object"
-        ? JSON.stringify(r.reportDocument)
-        : r.reportDocument,
-    })),
-
-    leasingInfo: [],
-  };
-
-  // === Lease Logic ===
-  if (!isEditMode && formData.ownership === "Lease") {
-    if (leasingRecords.length === 0) {
-      alert("Please add at least one leasing record for a Leased container.");
+    if (!formData.containerNumber) {
+      alert("Container Number is required");
       return;
     }
 
-    for (const record of leasingRecords) {
-      const selectedPort = allPorts.find((p) => p.portName === record.onHireLocation);
-      if (!selectedPort) {
-        alert(`Port not found for leasing record`);
+    const payload: any = {
+      status: formData.status,
+      containerNumber: formData.containerNumber,
+      containerCategory: formData.containerCategory,
+      containerType: formData.containerType,
+      containerSize: formData.containerSize,
+      containerClass: formData.containerClass,
+      containerCapacity: formData.containerCapacity,
+      capacityUnit: formData.capacityUnit,
+      manufacturer: formData.manufacturer,
+      buildYear: formData.buildYear,
+      grossWeight: formData.grossWeight,
+      tareWeight: formData.tareWeight,
+      InitialSurveyDate: formData.initialSurveyDate,
+
+      periodicTankCertificates: certificates.map((c) => ({
+        id: c.id || undefined,
+        inspectionDate: c.inspectionDate,
+        inspectionType: c.inspectionType,
+        nextDueDate: c.nextDueDate,
+        certificate:
+          typeof c.certificate === "string"
+            ? c.certificate
+            : c.certificateFile?.name || null,
+      })),
+
+      onHireReport: reports.map((r) => ({
+        id: r.id || undefined,
+        reportDate: r.reportDate,
+        reportDocument: typeof r.reportDocument === "object"
+          ? JSON.stringify(r.reportDocument)
+          : r.reportDocument,
+      })),
+
+      leasingInfo: [],
+    };
+
+    // === Lease Logic ===
+    if (!isEditMode && formData.ownership === "Lease") {
+      if (leasingRecords.length === 0) {
+        alert("Please add at least one leasing record for a Leased container.");
+        return;
+      }
+
+      for (const record of leasingRecords) {
+        const selectedPort = allPorts.find((p) => p.portName === record.onHireLocation);
+        if (!selectedPort) {
+          alert(`Port not found for leasing record`);
+          return;
+        }
+
+        payload.leasingInfo.push({
+          ownershipType: "Leased",
+          leasingRefNo: record.leasingRef,
+          leasoraddressbookId: parseInt(record.leasoraddressbookId),
+          onHireDepotaddressbookId: parseInt(record.onHireDepotaddressbookId),
+          portId: selectedPort.id,
+          onHireDate: new Date(record.onHireDate).toISOString(),
+          offHireDate: record.offHireDate ? new Date(record.offHireDate).toISOString() : null,
+          leaseRentPerDay: record.leaseRentPerDay || "0",
+          remarks: record.remarks || "",
+        });
+      }
+
+      payload.portId = payload.leasingInfo[0].portId;
+      payload.onHireDepotaddressbookId = payload.leasingInfo[0].onHireDepotaddressbookId;
+      payload.ownership = "Lease";
+    }
+
+    // === Own Logic ===
+    if (!isEditMode && formData.ownership === "Own") {
+      const selectedPort = allPorts.find((p) => p.portName === formData.onHireLocation);
+      if (!selectedPort || !selectedHireDepotId) {
+        alert("On Hire Port and Depot are required.");
         return;
       }
 
       payload.leasingInfo.push({
-        ownershipType: "Leased",
-        leasingRefNo: record.leasingRef,
-        leasoraddressbookId: parseInt(record.leasoraddressbookId),
-        onHireDepotaddressbookId: parseInt(record.onHireDepotaddressbookId),
+        ownershipType: "Own",
+        leasingRefNo: `OWN-${formData.containerNumber}`,
+        leasoraddressbookId: (selectedHireDepotId),
+        onHireDepotaddressbookId: selectedHireDepotId,
         portId: selectedPort.id,
-        onHireDate: new Date(record.onHireDate).toISOString(),
-        offHireDate: record.offHireDate ? new Date(record.offHireDate).toISOString() : null,
-        leaseRentPerDay: record.leaseRentPerDay || "0",
-        remarks: record.remarks || "",
+        onHireDate: new Date().toISOString(),
+        offHireDate: null,
+        leaseRentPerDay: "",
+        remarks: "",
       });
+
+      payload.portId = selectedPort.id;
+      payload.onHireDepotaddressbookId = parseInt(selectedHireDepotId.toString());
+      payload.ownership = "Own";
     }
 
-    payload.portId = payload.leasingInfo[0].portId;
-    payload.onHireDepotaddressbookId = payload.leasingInfo[0].onHireDepotaddressbookId;
-    payload.ownership = "Lease";
-  }
+    try {
+      let createdInventoryId = inventoryId;
 
-  // === Own Logic ===
-  if (!isEditMode && formData.ownership === "Own") {
-    const selectedPort = allPorts.find((p) => p.portName === formData.onHireLocation);
-    if (!selectedPort || !selectedHireDepotId) {
-      alert("On Hire Port and Depot are required.");
-      return;
-    }
+      if (isEditMode && inventoryId) {
+        const response = await axios.patch(`http://localhost:8000/inventory/${inventoryId}`, payload);
+        createdInventoryId = response.data.id || inventoryId;
 
-    payload.leasingInfo.push({
-      ownershipType: "Own",
-      leasingRefNo: `OWN-${formData.containerNumber}`,
-      leasoraddressbookId: (selectedHireDepotId),
-onHireDepotaddressbookId: selectedHireDepotId,
-      portId: selectedPort.id,
-      onHireDate: new Date().toISOString(),
-      offHireDate: null,
-      leaseRentPerDay: "",
-      remarks: "",
-    });
+        const originalOwnership = editData.leasingInfo?.[0]?.ownershipType || "Leased";
+        const currentOwnership = formData.ownership === "Lease" ? "Leased" : "Own";
 
-    payload.portId = selectedPort.id;
-    payload.onHireDepotaddressbookId = parseInt(selectedHireDepotId.toString());
-    payload.ownership = "Own";
-  }
-
-  try {
-    let createdInventoryId = inventoryId;
-
-    if (isEditMode && inventoryId) {
-      const response = await axios.patch(`http://localhost:8000/inventory/${inventoryId}`, payload);
-      createdInventoryId = response.data.id || inventoryId;
-
-      const originalOwnership = editData.leasingInfo?.[0]?.ownershipType || "Leased";
-      const currentOwnership = formData.ownership === "Lease" ? "Leased" : "Own";
-
-      // Ownership changed
-      if (originalOwnership !== currentOwnership) {
-        for (const record of editData.leasingInfo || []) {
-          await axios.delete(`http://localhost:8000/leasinginfo/${record.id}`);
+        // Ownership changed
+        if (originalOwnership !== currentOwnership) {
+          for (const record of editData.leasingInfo || []) {
+            await axios.delete(`http://localhost:8000/leasinginfo/${record.id}`);
+          }
         }
-      }
 
-      if (formData.ownership === "Own") {
-        const selectedPort = allPorts.find((p) => p.portName === formData.onHireLocation);
-        if (!selectedPort || !selectedHireDepotId) throw new Error("Port/Depot missing");
+        if (formData.ownership === "Own") {
+          const selectedPort = allPorts.find((p) => p.portName === formData.onHireLocation);
+          if (!selectedPort || !selectedHireDepotId) throw new Error("Port/Depot missing");
 
-        const ownLeasingData = {
-          ownershipType: "Own",
-          leasingRefNo: `OWN-${formData.containerNumber}`,
-          leasoraddressbookId: (selectedHireDepotId),
-          onHireDepotaddressbookId:(selectedHireDepotId),
-          portId: selectedPort.id,
-          onHireDate: new Date().toISOString(),
-          offHireDate: null,
-          leaseRentPerDay: "",
-          remarks: "",
-          inventoryId: createdInventoryId,
-        };
+          const ownLeasingData = {
+            ownershipType: "Own",
+            leasingRefNo: `OWN-${formData.containerNumber}`,
+            leasoraddressbookId: (selectedHireDepotId),
+            onHireDepotaddressbookId: (selectedHireDepotId),
+            portId: selectedPort.id,
+            onHireDate: new Date().toISOString(),
+            offHireDate: null,
+            leaseRentPerDay: "",
+            remarks: "",
+            inventoryId: createdInventoryId,
+          };
 
-        if (editData.leasingInfo?.length > 0) {
-          await axios.patch(`http://localhost:8000/leasinginfo/${editData.leasingInfo[0].id}`, ownLeasingData);
-        } else {
-          await axios.post("http://localhost:8000/leasinginfo", ownLeasingData);
+          if (editData.leasingInfo?.length > 0) {
+            await axios.patch(`http://localhost:8000/leasinginfo/${editData.leasingInfo[0].id}`, ownLeasingData);
+          } else {
+            await axios.post("http://localhost:8000/leasinginfo", ownLeasingData);
+          }
         }
+
+        if (formData.ownership === "Lease" && leasingRecords.length > 0) {
+          await handleSubmitLeasingRecords(createdInventoryId);
+        }
+
+      } else {
+        const response = await axios.post("http://localhost:8000/inventory", payload);
+        createdInventoryId = response.data.id;
       }
 
-      if (formData.ownership === "Lease" && leasingRecords.length > 0) {
-        await handleSubmitLeasingRecords(createdInventoryId);
-      }
+      // debug response
+      console.log("Container saved successfully:", payload);
 
-    } else {
-      const response = await axios.post("http://localhost:8000/inventory", payload);
-      createdInventoryId = response.data.id;
+      alert("Container saved successfully!");
+      onClose();
+    } catch (error: any) {
+      console.error("Error saving container:", error.response?.data || error.message);
+      alert("Failed to save container. Please check console for details.");
     }
-
-// debug response
-    console.log("Container saved successfully:", payload);
-
-    alert("Container saved successfully!");
-    onClose();
-  } catch (error: any) {
-    console.error("Error saving container:", error.response?.data || error.message);
-    alert("Failed to save container. Please check console for details.");
-  }
-};
+  };
 
 
 
@@ -1204,25 +1220,26 @@ onHireDepotaddressbookId: selectedHireDepotId,
                       </td>
                       <td className="py-2 pr-1">
                         <select
-                          value={record.leasorName}
-                          onChange={e => {
+                          value={record.leasoraddressbookId}
+                          onChange={(e) => {
                             const updated = [...leasingRecords];
-                            updated[index].leasorName = e.target.value;
-                            // Also set the addressbook ID for backend compatibility
-                            const selectedLeasor = leasoraddressbookIds.find(l => l.companyName === e.target.value);
-                            updated[index].leasoraddressbookId = selectedLeasor?.id?.toString() || "";
+                            updated[index].leasoraddressbookId = e.target.value;
+                            const selected = leasoraddressbookIds.find(l => l.id.toString() === e.target.value);
+                            updated[index].leasorName = selected?.companyName || "";
                             updated[index].isModified = true;
                             setLeasingRecords(updated);
                           }}
                           className="w-full p-1 bg-neutral-700 rounded text-white text-xs border border-neutral-600 focus:border-blue-500"
+
                         >
                           <option value="">Select</option>
                           {leasoraddressbookIds.map((leasor) => (
-                            <option key={leasor.id} value={leasor.companyName}>
+                            <option key={leasor.id} value={leasor.id}>
                               {leasor.companyName}
                             </option>
                           ))}
                         </select>
+
                       </td>
                       <td className="py-2 pr-1">
                         <input
@@ -1237,25 +1254,23 @@ onHireDepotaddressbookId: selectedHireDepotId,
                           className="w-full p-1 bg-neutral-700 rounded text-white text-xs border border-neutral-600 focus:border-blue-500"
                         />
                       </td>
+
+                      {/* On Hire Location (Port) */}
                       <td className="py-2 pr-1">
                         <select
-                          value={record.onHireLocation}
-                          onChange={e => {
-                            const selectedPortName = e.target.value;
-                            const selectedPort = allPorts.find(
-                              (p) => p.portName === selectedPortName
-                            );
+                          value={record.portId || ""}
+                          onChange={(e) => {
+                            const selectedPortId = e.target.value;
+                            const selectedPort = allPorts.find((p) => p.id.toString() === selectedPortId);
 
                             const updated = [...leasingRecords];
-                            updated[index].onHireLocation = selectedPortName;
-
-                            // Also reset the depot selection when port changes
+                            updated[index].portId = selectedPortId;
+                            updated[index].onHireLocation = selectedPort?.portName || "";
                             updated[index].onHireDepotaddressbookId = "";
+                            updated[index].onHireDepotName = "";
                             updated[index].isModified = true;
 
                             setLeasingRecords(updated);
-
-                            // Set the current leasing record index
                             setCurrentLeasingRecordIndex(index);
 
                             if (selectedPort) {
@@ -1267,29 +1282,33 @@ onHireDepotaddressbookId: selectedHireDepotId,
                         >
                           <option value="">Select</option>
                           {allPorts.map((port) => (
-                            <option key={port.id} value={port.portName}>
+                            <option key={port.id} value={port.id.toString()}>
                               {port.portName}
                             </option>
                           ))}
                         </select>
                       </td>
+
+                      {/* On Hire Depot */}
                       <td className="py-2 pr-1">
                         <select
-                          value={record.onHireDepotName}
-                          onChange={e => {
+                          value={record.onHireDepotaddressbookId || ""}
+                          onChange={(e) => {
+                            const selectedDepotId = e.target.value;
+                            const selectedDepot = hireDepotOptions.find((opt) => opt.value.toString() === selectedDepotId);
+
                             const updated = [...leasingRecords];
-                            updated[index].onHireDepotName = e.target.value;
-                            // Also set the addressbook ID for backend compatibility
-                            const selectedDepot = hireDepotOptions.find(opt => opt.companyName === e.target.value);
-                            updated[index].onHireDepotaddressbookId = selectedDepot?.value?.toString() || "";
+                            updated[index].onHireDepotaddressbookId = selectedDepotId;
+                            updated[index].onHireDepotName = selectedDepot?.companyName || selectedDepot?.label?.split(" - ")[0] || "";
                             updated[index].isModified = true;
+
                             setLeasingRecords(updated);
                           }}
-                          disabled={!record.onHireLocation}
-                          className={`w-full p-1 rounded text-white text-xs border border-neutral-600 focus:border-blue-500 ${currentLeasingRecordIndex === index ? 'bg-neutral-700' : 'bg-neutral-700'}`}
+                          disabled={!record.portId}
+                          className="w-full p-1 bg-neutral-700 rounded text-white text-xs border border-neutral-600 focus:border-blue-500"
                         >
                           <option value="">
-                            {!record.onHireLocation
+                            {!record.portId
                               ? "Select a port first"
                               : currentLeasingRecordIndex !== index
                                 ? "Click port again to load depots"
@@ -1297,13 +1316,15 @@ onHireDepotaddressbookId: selectedHireDepotId,
                                   ? "No depot terminals available for this port"
                                   : "Select Depot"}
                           </option>
-                          {(currentLeasingRecordIndex === index || record.onHireDepotName) && hireDepotOptions.map(opt => (
-                            <option key={opt.value} value={opt.companyName || opt.label.split(" - ")[0]}>
-                              {opt.label}
-                            </option>
-                          ))}
+                          {(currentLeasingRecordIndex === index || record.onHireDepotaddressbookId) &&
+                            hireDepotOptions.map((opt) => (
+                              <option key={opt.value} value={opt.value}>
+                                {opt.label}
+                              </option>
+                            ))}
                         </select>
                       </td>
+
                       <td className="py-2 pr-1">
                         <input
                           type="date"

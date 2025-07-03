@@ -147,9 +147,7 @@ case 'UNAVAILABLE':
   if (addressBookId == null) addressBookId = prev.addressBookId;
   break;
 
-        // keep existing portId/addressBookId
-        
-        break;
+  
 
       default:
         throw new Error(`Unsupported status transition: ${status}`);
@@ -179,12 +177,17 @@ case 'UNAVAILABLE':
 
 
   async updateMovement(id: number, data: Partial<MovementHistory>) {
+  const updatedData = {
+    ...data,
+    date: data.date ? new Date(data.date) : undefined, // 👈 convert only if defined
+  };
 
-    return this.prisma.movementHistory.update({
-      where: { id },
-      data,
-    });
-  }
+  return this.prisma.movementHistory.update({
+    where: { id },
+    data: updatedData,
+  });
+}
+
 
 async createNewStatusEntry(
   prevId: number,
