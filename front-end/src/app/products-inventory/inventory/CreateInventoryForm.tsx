@@ -19,9 +19,11 @@ interface Certificate {
   inspectionType: string;
   nextDueDate: string;
   certificateFile: File | null;
-  certificate?: string; // Add this line to fix the error
+  certificate?: string; // filename for existing certificates
+  certificateFilename?: string; // alias for display
   isNew?: boolean;
   isModified?: boolean;
+  needsUpload?: boolean; // Add this property
 }
 
 interface Report {
@@ -79,7 +81,7 @@ const AddInventoryForm: React.FC<InventoryFormProps> = ({
     containerType: "ISO Tank",
     containerSize: "20TK",
     containerClass: "T11",
-    containerCapacity: "MTN",
+    containerCapacity: "",
     capacityUnit: "",
     manufacturer: "",
     buildYear: "",
@@ -232,21 +234,21 @@ const AddInventoryForm: React.FC<InventoryFormProps> = ({
         });
       }
 
-      // Preserve existing certificates with isModified=false
+      // Fix: Preserve existing certificates with proper filename handling
       if (tempEditData.periodicTankCertificates) {
-  const existingCertificates = tempEditData.periodicTankCertificates.map((cert: any) => ({
-    id: cert.id,
-    inspectionDate: cert.inspectionDate ? new Date(cert.inspectionDate).toISOString().split('T')[0] : "",
-    inspectionType: cert.inspectionType || "",
-    nextDueDate: cert.nextDueDate ? new Date(cert.nextDueDate).toISOString().split('T')[0] : "",
-    certificateFile: null, 
-    certificateFilename: cert.certificate, 
-    isNew: false,
-    isModified: false,
-  }));
-  setCertificates(existingCertificates);
-}
-
+        const existingCertificates = tempEditData.periodicTankCertificates.map((cert: any) => ({
+          id: cert.id,
+          inspectionDate: cert.inspectionDate ? new Date(cert.inspectionDate).toISOString().split('T')[0] : "",
+          inspectionType: cert.inspectionType || "",
+          nextDueDate: cert.nextDueDate ? new Date(cert.nextDueDate).toISOString().split('T')[0] : "",
+          certificateFile: null, 
+          certificate: cert.certificate, // Keep the filename
+          certificateFilename: cert.certificate, // Also store in certificateFilename for display
+          isNew: false,
+          isModified: false,
+        }));
+        setCertificates(existingCertificates);
+      }
 
       // For reports, we need to preserve the document filename
       if (tempEditData.onHireReport) {
@@ -508,15 +510,41 @@ const AddInventoryForm: React.FC<InventoryFormProps> = ({
   };
 
 
-  // Remove certificate
-  const handleDeleteCertificate = (idx: number) => {
+  // Add these functions to handle deletion properly
+  const handleDeleteCertificate = async (idx: number) => {
+    const cert = certificates[idx];
+    
+    // If it's an existing certificate (has ID), delete from backend
+    if (cert.id && !cert.isNew) {
+      try {
+        await axios.delete(`http://localhost:8000/tankcertificate/${cert.id}`);
+      } catch (error) {
+        console.error('Error deleting certificate:', error);
+        alert('Failed to delete certificate');
+        return;
+      }
+    }
+    
+    // Remove from local state
     setCertificates((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  // Add report
-
   // Remove report
-  const handleDeleteReport = (idx: number) => {
+  const handleDeleteReport = async (idx: number) => {
+    const report = reports[idx];
+    
+    // If it's an existing report (has ID), delete from backend
+    if (report.id && !report.isNew) {
+      try {
+        await axios.delete(`http://localhost:8000/onhirereport/${report.id}`);
+      } catch (error) {
+        console.error('Error deleting report:', error);
+        alert('Failed to delete report');
+        return;
+      }
+    }
+    
+    // Remove from local state
     setReports((prev) => prev.filter((_, i) => i !== idx));
   };
 
@@ -666,106 +694,195 @@ const AddInventoryForm: React.FC<InventoryFormProps> = ({
       return;
     }
 
-    const payload: any = {
-      status: formData.status,
-      containerNumber: formData.containerNumber,
-      containerCategory: formData.containerCategory,
-      containerType: formData.containerType,
-      containerSize: formData.containerSize,
-      containerClass: formData.containerClass,
-      containerCapacity: formData.containerCapacity,
-      capacityUnit: formData.capacityUnit,
-      manufacturer: formData.manufacturer,
-      buildYear: formData.buildYear,
-      grossWeight: formData.grossWeight,
-      tareWeight: formData.tareWeight,
-      InitialSurveyDate: formData.initialSurveyDate,
+    try {
+      let createdInventoryId = inventoryId;
 
-      periodicTankCertificates: certificates.map((c) => ({
-        id: c.id || undefined,
-        inspectionDate: c.inspectionDate,
-        inspectionType: c.inspectionType,
-        nextDueDate: c.nextDueDate,
-        certificate:
-          typeof c.certificate === "string"
-            ? c.certificate
-            : c.certificateFile?.name || null,
-      })),
+      // First, handle file uploads for certificates
+      const processedCertificates: Certificate[] = [];
+      for (const cert of certificates) {
+        let certificateFilename = cert.certificate;
 
-      onHireReport: reports.map((r) => ({
-        id: r.id || undefined,
-        reportDate: r.reportDate,
-        reportDocument: typeof r.reportDocument === "object"
-          ? JSON.stringify(r.reportDocument)
-          : r.reportDocument,
-      })),
+        // If there's a new file to upload
+        if (cert.certificateFile) {
+          const certFormData = new FormData();
+          certFormData.append('certificate', cert.certificateFile);
+          certFormData.append('inspectionDate', cert.inspectionDate);
+          certFormData.append('inspectionType', cert.inspectionType);
+          certFormData.append('nextDueDate', cert.nextDueDate);
 
-      leasingInfo: [],
-    };
+          try {
+            if (cert.id && !cert.isNew) {
+              // Update existing certificate with file
+              const response = await axios.patch(`http://localhost:8000/tankcertificate/${cert.id}`, certFormData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+              });
+              certificateFilename = response.data.certificate;
+            } else {
+              // Mark for upload after inventory creation
+              processedCertificates.push({
+                ...cert,
+                needsUpload: true,
+                certificate: certificateFilename
+              });
+              continue;
+            }
+          } catch (error) {
+            console.error('Error uploading certificate:', error);
+            alert('Failed to upload certificate');
+            return;
+          }
+        }
 
-    // === Lease Logic ===
-    if (!isEditMode && formData.ownership === "Lease") {
-      if (leasingRecords.length === 0) {
-        alert("Please add at least one leasing record for a Leased container.");
-        return;
+        processedCertificates.push({
+          id: cert.id,
+          inspectionDate: cert.inspectionDate,
+          inspectionType: cert.inspectionType,
+          nextDueDate: cert.nextDueDate,
+          certificateFile: cert.certificateFile,
+          certificate: certificateFilename,
+          isNew: cert.isNew,
+          isModified: cert.isModified,
+          needsUpload: false
+        });
       }
 
-      for (const record of leasingRecords) {
-        const selectedPort = allPorts.find((p) => p.portName === record.onHireLocation);
-        if (!selectedPort) {
-          alert(`Port not found for leasing record`);
+      // FIX: Process reports but DON'T create/update them here - only handle file uploads
+      const processedReports = [];
+      for (const report of reports) {
+        let reportDocumentName = report.reportDocumentName;
+
+        // If there's a new file to upload, upload it first
+        if (report.reportDocument) {
+          const reportFormData = new FormData();
+          reportFormData.append('file', report.reportDocument);
+
+          try {
+            // Upload the file first
+            const response = await axios.post('http://localhost:8000/onhirereport/uploads/reports', reportFormData, {
+              headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            reportDocumentName = response.data.filename;
+          } catch (error) {
+            console.error('Error uploading report:', error);
+            alert('Failed to upload report document');
+            return;
+          }
+        }
+
+        // FIX: Just store the processed report data, don't create/update the record yet
+        processedReports.push({
+          id: report.id || undefined,
+          reportDate: report.reportDate,
+          reportDocument: reportDocumentName,
+          isNew: report.isNew,
+          isModified: report.isModified
+        });
+      }
+
+      const payload: any = {
+        status: formData.status,
+        containerNumber: formData.containerNumber,
+        containerCategory: formData.containerCategory,
+        containerType: formData.containerType,
+        containerSize: formData.containerSize,
+        containerClass: formData.containerClass,
+        containerCapacity: formData.containerCapacity,
+        capacityUnit: formData.capacityUnit,
+        manufacturer: formData.manufacturer,
+        buildYear: formData.buildYear,
+        grossWeight: formData.grossWeight,
+        tareWeight: formData.tareWeight,
+        InitialSurveyDate: formData.initialSurveyDate,
+        periodicTankCertificates: processedCertificates.filter(c => !c.needsUpload),
+        // FIX: Include the processed reports in payload - this will handle creation/update properly
+        onHireReport: processedReports,
+        leasingInfo: [],
+      };
+
+      // === Lease Logic ===
+      if (!isEditMode && formData.ownership === "Lease") {
+        if (leasingRecords.length === 0) {
+          alert("Please add at least one leasing record for a Leased container.");
+          return;
+        }
+
+        for (const record of leasingRecords) {
+          const selectedPort = allPorts.find((p) => p.portName === record.onHireLocation);
+          if (!selectedPort) {
+            alert(`Port not found for leasing record`);
+            return;
+          }
+
+          payload.leasingInfo.push({
+            ownershipType: "Leased",
+            leasingRefNo: record.leasingRef,
+            leasoraddressbookId: parseInt(record.leasoraddressbookId),
+            onHireDepotaddressbookId: parseInt(record.onHireDepotaddressbookId),
+            portId: selectedPort.id,
+            onHireDate: new Date(record.onHireDate).toISOString(),
+            offHireDate: record.offHireDate ? new Date(record.offHireDate).toISOString() : null,
+            leaseRentPerDay: record.leaseRentPerDay || "0",
+            remarks: record.remarks || "",
+          });
+        }
+
+        payload.portId = payload.leasingInfo[0].portId;
+        payload.onHireDepotaddressbookId = payload.leasingInfo[0].onHireDepotaddressbookId;
+        payload.ownership = "Lease";
+      }
+
+      // === Own Logic ===
+      if (!isEditMode && formData.ownership === "Own") {
+        const selectedPort = allPorts.find((p) => p.portName === formData.onHireLocation);
+        if (!selectedPort || !selectedHireDepotId) {
+          alert("On Hire Port and Depot are required.");
           return;
         }
 
         payload.leasingInfo.push({
-          ownershipType: "Leased",
-          leasingRefNo: record.leasingRef,
-          leasoraddressbookId: parseInt(record.leasoraddressbookId),
-          onHireDepotaddressbookId: parseInt(record.onHireDepotaddressbookId),
+          ownershipType: "Own",
+          leasingRefNo: `OWN-${formData.containerNumber}`,
+          leasoraddressbookId: (selectedHireDepotId),
+          onHireDepotaddressbookId: selectedHireDepotId,
           portId: selectedPort.id,
-          onHireDate: new Date(record.onHireDate).toISOString(),
-          offHireDate: record.offHireDate ? new Date(record.offHireDate).toISOString() : null,
-          leaseRentPerDay: record.leaseRentPerDay || "0",
-          remarks: record.remarks || "",
+          onHireDate: new Date().toISOString(),
+          offHireDate: null,
+          leaseRentPerDay: "",
+          remarks: "",
         });
+
+        payload.portId = selectedPort.id;
+        payload.onHireDepotaddressbookId = parseInt(selectedHireDepotId.toString());
+        payload.ownership = "Own";
       }
-
-      payload.portId = payload.leasingInfo[0].portId;
-      payload.onHireDepotaddressbookId = payload.leasingInfo[0].onHireDepotaddressbookId;
-      payload.ownership = "Lease";
-    }
-
-    // === Own Logic ===
-    if (!isEditMode && formData.ownership === "Own") {
-      const selectedPort = allPorts.find((p) => p.portName === formData.onHireLocation);
-      if (!selectedPort || !selectedHireDepotId) {
-        alert("On Hire Port and Depot are required.");
-        return;
-      }
-
-      payload.leasingInfo.push({
-        ownershipType: "Own",
-        leasingRefNo: `OWN-${formData.containerNumber}`,
-        leasoraddressbookId: (selectedHireDepotId),
-        onHireDepotaddressbookId: selectedHireDepotId,
-        portId: selectedPort.id,
-        onHireDate: new Date().toISOString(),
-        offHireDate: null,
-        leaseRentPerDay: "",
-        remarks: "",
-      });
-
-      payload.portId = selectedPort.id;
-      payload.onHireDepotaddressbookId = parseInt(selectedHireDepotId.toString());
-      payload.ownership = "Own";
-    }
-
-    try {
-      let createdInventoryId = inventoryId;
 
       if (isEditMode && inventoryId) {
         const response = await axios.patch(`http://localhost:8000/inventory/${inventoryId}`, payload);
         createdInventoryId = response.data.id || inventoryId;
+
+        // Handle new certificates that need file upload after inventory update
+        const certificatesToUpload = processedCertificates.filter(c => c.needsUpload);
+        for (const cert of certificatesToUpload) {
+          // Find the original certificate with the file from the certificates array
+          const originalCert = certificates.find(c => 
+            c.inspectionDate === cert.inspectionDate && 
+            c.inspectionType === cert.inspectionType &&
+            c.certificateFile
+          );
+          
+          if (originalCert && originalCert.certificateFile) {
+            const certFormData = new FormData();
+            certFormData.append('certificate', originalCert.certificateFile);
+            certFormData.append('inspectionDate', cert.inspectionDate);
+            certFormData.append('inspectionType', cert.inspectionType);
+            certFormData.append('nextDueDate', cert.nextDueDate);
+            certFormData.append('inventoryId', createdInventoryId.toString());
+
+            await axios.post('http://localhost:8000/tankcertificate', certFormData, {
+              headers: { 'Content-Type': 'multipart/form-data' }
+            });
+          }
+        }
 
         const originalOwnership = editData.leasingInfo?.[0]?.ownershipType || "Leased";
         const currentOwnership = formData.ownership === "Lease" ? "Leased" : "Own";
@@ -794,11 +911,25 @@ const AddInventoryForm: React.FC<InventoryFormProps> = ({
             inventoryId: createdInventoryId,
           };
 
-          if (editData.leasingInfo?.length > 0) {
-            await axios.patch(`http://localhost:8000/leasinginfo/${editData.leasingInfo[0].id}`, ownLeasingData);
-          } else {
-            await axios.post("http://localhost:8000/leasinginfo", ownLeasingData);
-          }
+        if (
+  editData.leasingInfo?.length > 0 &&
+  originalOwnership === currentOwnership // only try patch if same type
+) {
+  try {
+    await axios.patch(`http://localhost:8000/leasinginfo/${editData.leasingInfo[0].id}`, ownLeasingData);
+  } catch (err: any) {
+    if (err.response?.status === 404) {
+      // Fallback to create
+      await axios.post("http://localhost:8000/leasinginfo", ownLeasingData);
+    } else {
+      throw err;
+    }
+  }
+} else {
+  // Ownership changed or no leasing record existed
+  await axios.post("http://localhost:8000/leasinginfo", ownLeasingData);
+}
+
         }
 
         if (formData.ownership === "Lease" && leasingRecords.length > 0) {
@@ -808,6 +939,30 @@ const AddInventoryForm: React.FC<InventoryFormProps> = ({
       } else {
         const response = await axios.post("http://localhost:8000/inventory", payload);
         createdInventoryId = response.data.id;
+
+        // Handle new certificates for new inventory
+        const certificatesToUpload = processedCertificates.filter(c => c.needsUpload);
+        for (const cert of certificatesToUpload) {
+          // Find the original certificate with the file from the certificates array
+          const originalCert = certificates.find(c => 
+            c.inspectionDate === cert.inspectionDate && 
+            c.inspectionType === cert.inspectionType &&
+            c.certificateFile
+          );
+          
+          if (originalCert && originalCert.certificateFile) {
+            const certFormData = new FormData();
+            certFormData.append('certificate', originalCert.certificateFile);
+            certFormData.append('inspectionDate', cert.inspectionDate);
+            certFormData.append('inspectionType', cert.inspectionType);
+            certFormData.append('nextDueDate', cert.nextDueDate);
+            certFormData.append('inventoryId', createdInventoryId.toString());
+
+            await axios.post('http://localhost:8000/tankcertificate', certFormData, {
+              headers: { 'Content-Type': 'multipart/form-data' }
+            });
+          }
+        }
       }
 
       // debug response
@@ -815,10 +970,12 @@ const AddInventoryForm: React.FC<InventoryFormProps> = ({
 
       alert("Container saved successfully!");
       onClose();
-    } catch (error: any) {
-      console.error("Error saving container:", error.response?.data || error.message);
-      alert("Failed to save container. Please check console for details.");
-    }
+   } catch (error: any) {
+  console.error("Full error object:", error);
+  console.error("Error saving container:", error.response?.data || error.message || error.toString());
+  alert("Failed to save container. Please check console for details.");
+}
+
   };
 
 
@@ -1005,6 +1162,7 @@ const AddInventoryForm: React.FC<InventoryFormProps> = ({
                   onChange={handleChange}
                   className="px-3 py-2 text-sm bg-neutral-800 text-white rounded border border-neutral-700 focus:border-blue-500"
                 >
+                  
                   <option value="MTN">MTN</option>
                   <option value="LTRS">LTRS</option>
                 </select>
@@ -1461,18 +1619,20 @@ const AddInventoryForm: React.FC<InventoryFormProps> = ({
                       <div className="flex flex-col gap-1">
                         <input
                           type="file"
+                          accept=".pdf"
                           onChange={(e) => {
                             const newCerts = [...certificates];
                             newCerts[idx].certificateFile = e.target.files?.[0] || null;
+                            newCerts[idx].isModified = true;
                             setCertificates(newCerts);
                           }}
                           className="w-full px-3 py-2 text-sm bg-neutral-700 text-white rounded border border-neutral-600 focus:border-blue-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-neutral-600 file:text-white cursor-pointer"
                         />
 
                         {/* Show PDF link if certificate exists and no new file is selected */}
-                        {cert.certificate && !cert.certificateFile && (
+                        {(cert.certificate || cert.certificateFilename) && !cert.certificateFile && (
                           <a
-                            href={`http://localhost:8000/uploads/certificates/${cert.certificate}`}
+                            href={`http://localhost:8000/uploads/certificates/${cert.certificate || cert.certificateFilename}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-xs text-blue-400 hover:text-blue-300 mt-1 flex items-center"
@@ -1481,7 +1641,7 @@ const AddInventoryForm: React.FC<InventoryFormProps> = ({
                               <path d="M8 2a1 1 0 000 2h2a1 1 0 100-2H8z"></path>
                               <path d="M3 5a2 2 0 012-2h10a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V5z"></path>
                             </svg>
-                            View certificate: {cert.certificate.split('-').pop()}
+                            View certificate: {(cert.certificate || cert.certificateFilename)?.split('-').pop()}
                           </a>
                         )}
                       </div>

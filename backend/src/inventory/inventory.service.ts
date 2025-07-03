@@ -166,145 +166,146 @@ export class InventoryService {
       });
   }
 
-  async update(id: number, data: UpdateInventoryDto) {
-    const {
-      periodicTankCertificates,
-      leasingInfo,
-      onHireReport,
-      ownership,
-      ...inventoryData
-    } = data;
+ async update(id: number, data: UpdateInventoryDto) {
+  const {
+    periodicTankCertificates,
+    leasingInfo,
+    onHireReport,
+    ...inventoryData
+  } = data;
 
-    await this.prisma.inventory.update({
-      where: { id },
-      data: inventoryData,
-    });
+  // ✅ Update inventory base data
+  await this.prisma.inventory.update({
+    where: { id },
+    data: inventoryData,
+  });
 
-    if (periodicTankCertificates?.length) {
-      for (const cert of periodicTankCertificates) {
-        const inspectionDate = cert.inspectionDate
-          ? new Date(cert.inspectionDate)
-          : undefined;
-        const nextDueDate = cert.nextDueDate
-          ? new Date(cert.nextDueDate)
-          : undefined;
+  // ✅ Update/create periodic tank certificates
+  if (periodicTankCertificates?.length) {
+    for (const cert of periodicTankCertificates) {
+      const inspectionDate = cert.inspectionDate
+        ? new Date(cert.inspectionDate)
+        : undefined;
+      const nextDueDate = cert.nextDueDate
+        ? new Date(cert.nextDueDate)
+        : undefined;
 
-        if (cert.id) {
-          await this.prisma.periodicTankCertificates.update({
-            where: { id: cert.id },
-            data: {
-              inspectionDate,
-              inspectionType: cert.inspectionType,
-              nextDueDate,
-              certificate: cert.certificate ?? '',
-            },
-          });
-        } else {
-          await this.prisma.periodicTankCertificates.create({
-            data: {
-              inspectionDate,
-              inspectionType: cert.inspectionType,
-              nextDueDate,
-              certificate: cert.certificate ?? '',
-              inventoryId: id,
-            },
-          });
-        }
+      if (cert.id) {
+        await this.prisma.periodicTankCertificates.update({
+          where: { id: cert.id },
+          data: {
+            inspectionDate,
+            inspectionType: cert.inspectionType,
+            nextDueDate,
+            certificate: cert.certificate ?? '',
+          },
+        });
+      } else {
+        await this.prisma.periodicTankCertificates.create({
+          data: {
+            inspectionDate,
+            inspectionType: cert.inspectionType,
+            nextDueDate,
+            certificate: cert.certificate ?? '',
+            inventoryId: id,
+          },
+        });
       }
     }
+  }
 
-    if (leasingInfo?.length) {
-      for (const lease of leasingInfo) {
-        const leasingData: any = {
-          ownershipType: lease.ownershipType,
-          leasingRefNo: lease.leasingRefNo,
-          leasoraddressbookId: lease.leasoraddressbookId,
-          onHireDepotaddressbookId: lease.onHireDepotaddressbookId,
-          portId: lease.portId,
-          leaseRentPerDay: lease.leaseRentPerDay ?? '0',
-          remarks: lease.remarks ?? '',
-        };
+  // ✅ Handle leasing info
+  if (leasingInfo?.length) {
+    for (const lease of leasingInfo) {
+      const leasingData: any = {
+        ownershipType: lease.ownershipType,
+        leasingRefNo: lease.leasingRefNo,
+        leasoraddressbookId: lease.leasoraddressbookId,
+        onHireDepotaddressbookId: lease.onHireDepotaddressbookId,
+        portId: lease.portId,
+        leaseRentPerDay: lease.leaseRentPerDay ?? '0',
+        remarks: lease.remarks ?? '',
+        onHireDate: lease.onHireDate ? new Date(lease.onHireDate) : undefined,
+        offHireDate: lease.offHireDate
+          ? new Date(lease.offHireDate)
+          : undefined,
+      };
 
-        if (lease.onHireDate) {
-          leasingData.onHireDate = new Date(lease.onHireDate);
-        }
-        if (lease.offHireDate) {
-          leasingData.offHireDate = new Date(lease.offHireDate);
-        }
+      if (lease.id) {
+        const existingLease = await this.prisma.leasingInfo.findUnique({
+          where: { id: lease.id },
+        });
 
-        if (lease.id) {
+        if (existingLease) {
           await this.prisma.leasingInfo.update({
             where: { id: lease.id },
-            data: {
-              ownershipType: lease.ownershipType,
-              leasingRefNo: lease.leasingRefNo,
-              leasoraddressbookId: lease.leasoraddressbookId,
-              onHireDepotaddressbookId: lease.onHireDepotaddressbookId,
-              portId: lease.portId,
-              onHireDate: lease.onHireDate
-                ? new Date(lease.onHireDate)
-                : undefined,
-              offHireDate: lease.offHireDate
-                ? new Date(lease.offHireDate)
-                : undefined,
-              leaseRentPerDay: lease.leaseRentPerDay ?? '0',
-              remarks: lease.remarks ?? '',
-            },
+            data: leasingData,
           });
         } else {
           await this.prisma.leasingInfo.create({
             data: {
-              ownershipType: lease.ownershipType,
-              leasingRefNo: lease.leasingRefNo,
-              leasoraddressbookId: lease.leasoraddressbookId,
-              onHireDepotaddressbookId: lease.onHireDepotaddressbookId,
-              portId: lease.portId,
-              onHireDate: lease.onHireDate
-                ? new Date(lease.onHireDate)
-                : new Date(),
-              offHireDate: lease.offHireDate
-                ? new Date(lease.offHireDate)
-                : undefined,
-              leaseRentPerDay: lease.leaseRentPerDay ?? '0',
-              remarks: lease.remarks ?? '',
+              ...leasingData,
               inventoryId: id,
             },
           });
         }
+      } else {
+        await this.prisma.leasingInfo.create({
+          data: {
+            ...leasingData,
+            inventoryId: id,
+          },
+        });
       }
     }
+  }
 
-    if (onHireReport?.length) {
-      for (const report of onHireReport) {
-        if (report.id) {
+  // ✅ Update on-hire reports
+  if (onHireReport?.length) {
+    for (const report of onHireReport) {
+      const reportData = {
+        reportDate: report.reportDate
+          ? new Date(report.reportDate)
+          : undefined,
+        reportDocument:
+          typeof report.reportDocument === 'object'
+            ? JSON.stringify(report.reportDocument)
+            : report.reportDocument,
+      };
+
+      if (report.id) {
+        const existingReport = await this.prisma.onHireReport.findUnique({
+          where: { id: report.id },
+        });
+
+        if (existingReport) {
           await this.prisma.onHireReport.update({
             where: { id: report.id },
-            data: {
-              reportDate: report.reportDate
-                ? new Date(report.reportDate)
-                : undefined,
-              reportDocument: report.reportDocument,
-            },
+            data: reportData,
           });
         } else {
           await this.prisma.onHireReport.create({
             data: {
-              reportDate: report.reportDate
-                ? new Date(report.reportDate)
-                : undefined,
-              reportDocument:
-                typeof report.reportDocument === 'object'
-                  ? JSON.stringify(report.reportDocument)
-                  : report.reportDocument,
+              ...reportData,
               inventoryId: id,
             },
           });
         }
+      } else {
+        await this.prisma.onHireReport.create({
+          data: {
+            ...reportData,
+            inventoryId: id,
+          },
+        });
       }
     }
-
-    return this.findOne(id);
   }
+
+  // ✅ Return updated record
+  return this.findOne(id);
+}
+
 
   async remove(id: string) {
     const numId = +id;

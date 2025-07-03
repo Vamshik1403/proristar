@@ -6,6 +6,7 @@ interface HistoryEntry {
   id: number;
   date: string;
   status: string;
+  remarks?: string;
   inventory?: { containerNumber: string };
   shipmentId: number | null;
   emptyRepoJobId: number | null;
@@ -75,6 +76,7 @@ const MovementHistoryModal: React.FC<Props> = ({ containerNumber, onClose }) => 
                 <th className="text-left py-2 px-3">Job No.</th>
                 <th className="text-left py-2 px-3">Location</th>
                 <th className="text-left py-2 px-3">Status</th>
+                <th className="text-left py-2 px-3">Remarks</th>
               </tr>
             </thead>
             <tbody>
@@ -108,6 +110,9 @@ const MovementHistoryModal: React.FC<Props> = ({ containerNumber, onClose }) => 
                       >
                         {entry.status}
                       </span>
+                    </td>
+                    <td className="py-2 px-3">
+                      {entry.remarks || 'N/A'}
                     </td>
                   </tr>
                 ))
