@@ -21,6 +21,9 @@ const EmptyRepo = () => {
   const [showModal, setShowModal] = useState(false);
   const [emptyRepoJobs, setEmptyRepoJobs] = useState([]);
   const [searchText, setSearchText] = useState('');
+  
+  // ADD THIS: State for selected containers
+  const [selectedContainers, setSelectedContainers] = useState<any[]>([]);
 
   // Initial empty form data
   const [formData, setFormData] = useState({
@@ -83,7 +86,7 @@ const EmptyRepo = () => {
   };
 
   // Handle edit
-  const handleEdit = (job: any) => {
+  const handleEdit = async (job: any) => {
     // Initialize selectedContainers with the existing containers
     const existingContainers = (job.containers || []).map((container: any) => ({
       containerNumber: container.containerNumber || "",
@@ -92,13 +95,28 @@ const EmptyRepo = () => {
       inventoryId: container.inventoryId || null,
       portId: container.portId || null,
       depotName: container.depotName || "",
+      port: container.port || null,
     }));
+
+    setSelectedContainers(existingContainers);
+
+    // FIX: Fetch transhipment port name if transhipmentPortId exists
+    let transhipmentPortName = "";
+    if (job.transhipmentPortId) {
+      try {
+        const res = await fetch(`http://localhost:8000/ports/${job.transhipmentPortId}`);
+        const port = await res.json();
+        transhipmentPortName = port.portName || "";
+      } catch (err) {
+        console.error("Failed to fetch transhipment port:", err);
+      }
+    }
 
     setFormData({
       id: job.id,
       date: job.date ? new Date(job.date).toISOString().split('T')[0] : '',
       jobNumber: job.jobNumber || '',
-      houseBL: job.houseBL || '',
+      houseBL: job.houseBL || '', // ADD THIS LINE
       shippingTerm: job.shippingTerm || 'CY-CY',
       
       // Port info
@@ -113,10 +131,10 @@ const EmptyRepo = () => {
       podFreeDays: job.podFreeDays || '',
       podDetentionRate: job.podDetentionRate || '',
       
-      // Transhipment
+      // FIX: Transhipment - properly set both the flag and the port name
       enableTranshipmentPort: !!job.transhipmentPortId,
-      transhipmentPortName: job.transhipmentPort?.portName || '',
-      transhipmentPortId: job.transhipmentPortId,
+      transhipmentPortName: transhipmentPortName, // Use the fetched port name
+      transhipmentPortId: job.transhipmentPortId, // Keep the ID for submission
       
       // Agents
       expHandlingAgentAddressBookId: job.expHandlingAgentAddressBookId,
@@ -173,6 +191,9 @@ const EmptyRepo = () => {
 
         <Button
           onClick={() => {
+            // FIX: Reset selectedContainers when creating new job
+            setSelectedContainers([]);
+            
             setFormData({
               id: undefined,
               date: '',
@@ -217,6 +238,8 @@ const EmptyRepo = () => {
             formTitle={formData.id ? 'Edit Empty Repo Job' : 'New Empty Repo Job'}
             form={formData}
             setForm={setFormData}
+            selectedContainers={selectedContainers} // ADD THIS
+            setSelectedContainers={setSelectedContainers} // ADD THIS
             refreshShipments={fetchEmptyRepoJobs}
           />
         )}

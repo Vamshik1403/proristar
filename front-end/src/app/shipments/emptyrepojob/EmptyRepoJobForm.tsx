@@ -26,12 +26,35 @@ type SelectOptions = {
   shippingTerm: Option[];
 };
 
-const AddShipmentModal = ({ onClose, formTitle, form, setForm, refreshShipments, }: any) => {
+type ContainerItem = {
+  containerNumber: string;
+  capacity: string;
+  tare: string;
+  inventoryId: number | null;
+  portId: number | null;
+  port: { portName: string } | null;
+  depotName: string;
+  inventory?: {
+    containerNumber: string;
+    capacity: string;
+    capacityUnit: string;
+    tare: string;
+  };
+};
+
+const AddShipmentModal = ({ 
+  onClose, 
+  formTitle, 
+  form, 
+  setForm, 
+  selectedContainers, 
+  setSelectedContainers, 
+  refreshShipments 
+}: any) => {
   const [carrierSuggestions, setCarrierSuggestions] = useState<any[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [allMovements, setAllMovements] = useState<any[]>([]);
-  const [selectedContainers, setSelectedContainers] = useState<any[]>([]);
   const [portSuggestions, setPortSuggestions] = useState<any[]>([]);
   const [showPortDropdown, setShowPortDropdown] = useState(false);
   const [showDischargeDropdown, setShowDischargeDropdown] = useState(false);
@@ -101,7 +124,7 @@ const AddShipmentModal = ({ onClose, formTitle, form, setForm, refreshShipments,
     const containerNo = item.inventory?.containerNumber;
     if (
       selectedContainers.some(
-        (c) => c.containerNumber === containerNo
+        (c: ContainerItem) => c.containerNumber === containerNo
       )
     )
       return;
@@ -148,6 +171,7 @@ const AddShipmentModal = ({ onClose, formTitle, form, setForm, refreshShipments,
     shippingTerm: []
   });
 
+  // Update the handleSubmit function to properly handle transhipment port
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -175,7 +199,7 @@ const AddShipmentModal = ({ onClose, formTitle, form, setForm, refreshShipments,
         estimateDate: form.estimatedEmptyReturnDate || new Date().toISOString(),
 
         // Include containers array
-        containers: selectedContainers.map((c) => ({
+        containers: selectedContainers.map((c: any) => ({
           containerNumber: c.containerNumber || "",
           capacity: c.capacity || "",
           tare: c.tare || "",
@@ -185,9 +209,12 @@ const AddShipmentModal = ({ onClose, formTitle, form, setForm, refreshShipments,
         })),
       };
 
-      if (form.enableTranshipmentPort && form.transhipmentPortName) {
-        payload.transhipmentPortId = parseInt(form.transhipmentPortName);
+      // FIX: Properly handle transhipment port
+      if (form.enableTranshipmentPort && form.transhipmentPortId) {
+        payload.transhipmentPortId = form.transhipmentPortId;
       }
+
+      console.log('Payload being sent:', payload); // Debug log
 
       if (form.id) {
         // For PATCH (Edit)
@@ -355,9 +382,11 @@ const AddShipmentModal = ({ onClose, formTitle, form, setForm, refreshShipments,
     const fetchNextJobNumber = async () => {
       try {
         const res = await axios.get("http://localhost:8000/empty-repo-job/job/next");
+        const jobNumber = res.data.jobNumber || "";
         setForm((prev: any) => ({
           ...prev,
-          jobNumber: res.data.jobNumber || "",
+          jobNumber: jobNumber,
+          houseBL: jobNumber, // House BL is same as job number based on backend logic
         }));
       } catch (err) {
         console.error("Failed to fetch job number", err);
@@ -367,7 +396,7 @@ const AddShipmentModal = ({ onClose, formTitle, form, setForm, refreshShipments,
     if (!form.id) {
       fetchNextJobNumber();
     }
-  }, []);
+  }, [form.id]);
 
   const handleRemoveContainer = (index: number) => {
     const updated = [...selectedContainers];
@@ -392,6 +421,44 @@ const AddShipmentModal = ({ onClose, formTitle, form, setForm, refreshShipments,
       }
     }
   }, [form.etaToPod, form.podFreeDays]);
+
+  // Add useEffect to initialize selectedContainers from form.containers when editing
+  useEffect(() => {
+    if (form.id && form.containers && form.containers.length > 0) {
+      // Initialize selectedContainers from form.containers when editing
+      const containers = form.containers.map((container: any) => ({
+        containerNumber: container.containerNumber || "",
+        capacity: container.capacity || "",
+        tare: container.tare || "",
+        inventoryId: container.inventoryId || null,
+        portId: container.portId || null,
+        depotName: container.depotName || "",
+        port: container.port || null,
+      }));
+      setSelectedContainers(containers);
+    }
+  }, [form.id, form.containers]);
+
+  // Add this useEffect to handle transhipment port display in edit mode
+  useEffect(() => {
+    if (form.id && form.enableTranshipmentPort && form.transhipmentPortId && !form.transhipmentPortName) {
+      // If we have a transhipment port ID but no name, fetch the port name
+      const fetchTranshipmentPortName = async () => {
+        try {
+          const res = await fetch(`http://localhost:8000/ports/${form.transhipmentPortId}`);
+          const port = await res.json();
+          setForm((prev: any) => ({
+            ...prev,
+            transhipmentPortName: port.portName,
+          }));
+        } catch (err) {
+          console.error("Failed to fetch transhipment port name:", err);
+        }
+      };
+
+      fetchTranshipmentPortName();
+    }
+  }, [form.id, form.enableTranshipmentPort, form.transhipmentPortId]);
 
   return (
     <div className="fixed inset-0 bg-opacity-40 flex items-center justify-center z-50 backdrop-blur-lg">
@@ -440,8 +507,22 @@ const AddShipmentModal = ({ onClose, formTitle, form, setForm, refreshShipments,
                     <Input
                       type="text"
                       value={form.jobNumber || ""}
-                      onChange={(e) => setForm({ ...form, jobNumber: e.target.value })}
-                      className="w-full p-2.5 bg-neutral-800 text-white rounded border border-neutral-700"
+                      readOnly
+                      className="w-full p-2.5 bg-neutral-700 text-neutral-300 rounded border border-neutral-600 cursor-not-allowed"
+                      placeholder="Auto-generated..."
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm text-neutral-200 mb-1">
+                      House BL <span className="text-red-500">*</span>
+                    </label>
+                    <Input
+                      type="text"
+                      value={form.houseBL || ""}
+                      readOnly
+                      className="w-full p-2.5 bg-neutral-700 text-neutral-300 rounded border border-neutral-600 cursor-not-allowed"
+                      placeholder="Auto-generated..."
                     />
                   </div>
 
@@ -661,7 +742,7 @@ const AddShipmentModal = ({ onClose, formTitle, form, setForm, refreshShipments,
                             setForm((prev: any) => ({
                               ...prev,
                               transhipmentPortName: value,
-                              transhipmentPortId: undefined,
+                              transhipmentPortId: undefined, // Reset ID when typing
                             }));
 
                             if (value.length > 1) {
@@ -784,23 +865,23 @@ const AddShipmentModal = ({ onClose, formTitle, form, setForm, refreshShipments,
                     Search by container number (min. 2 characters)
                   </p>
                 </div>
-                {selectedContainers.length > 0 && (
-                  <div className="mt-6">
-                    <h5 className="text-white text-sm font-semibold mb-2">
-                      Selected Containers
-                    </h5>
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-neutral-900 border-b border-neutral-700">
-                          <TableHead className="text-neutral-200 text-xs">Container No</TableHead>
-                          <TableHead className="text-neutral-200 text-xs">Capacity</TableHead>
-                          <TableHead className="text-neutral-200 text-xs">Tare</TableHead>
-                          <TableHead className="text-neutral-200 text-xs">Last Location</TableHead>
-                          <TableHead className="text-neutral-200 text-xs text-center">Action</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {selectedContainers.map((item, index) => (
+                  {selectedContainers.length > 0 && (
+                    <div className="mt-6">
+                      <h5 className="text-white text-sm font-semibold mb-2">
+                        Selected Containers
+                      </h5>
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-neutral-900 border-b border-neutral-700">
+                            <TableHead className="text-neutral-200 text-xs">Container No</TableHead>
+                            <TableHead className="text-neutral-200 text-xs">Capacity</TableHead>
+                            <TableHead className="text-neutral-200 text-xs">Tare</TableHead>
+                            <TableHead className="text-neutral-200 text-xs">Last Location</TableHead>
+                            <TableHead className="text-neutral-200 text-xs text-center">Action</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {selectedContainers.map((item: ContainerItem, index: number) => (
                           <TableRow key={index} className="border-t border-neutral-700">
                             <TableCell className="text-white">
                               {item.inventory?.containerNumber ||

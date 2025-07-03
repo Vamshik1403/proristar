@@ -45,10 +45,202 @@ const AddShipmentModal = ({
   const [consigneeSuggestions, setConsigneeSuggestions] = useState<any[]>([]);
   const [carrierSuggestions, setCarrierSuggestions] = useState<any[]>([]);
   const [shipperSuggestions, setShipperSuggestions] = useState<any[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [allMovements, setAllMovements] = useState<any[]>([]);
   const [allInventories, setAllInventories] = useState<any[]>([]);
+
+  // Add new suggestion states for the converted fields
+  const [customerSuggestions, setCustomerSuggestions] = useState<any[]>([]);
+  const [productSuggestions, setProductSuggestions] = useState<any[]>([]);
+  const [portSuggestions, setPortSuggestions] = useState<any[]>([]);
+  const [agentSuggestions, setAgentSuggestions] = useState<any[]>([]);
+  const [depotSuggestions, setDepotSuggestions] = useState<any[]>([]);
+
+  // FIX 1: Create separate state for each dropdown visibility
+  const [showSuggestions, setShowSuggestions] = useState({
+    customer: false,
+    product: false,
+    portLoading: false,
+    portDischarge: false,
+    expAgent: false,
+    impAgent: false,
+    depot: false,
+    consignee: false,
+    shipper: false,
+    carrier: false,
+  });
+
+  // Add new state for filtered options
+  const [expAgents, setExpAgents] = useState<{ id: number; companyName: string }[]>([]);
+  const [impHandlingAgents, setImpHandlingAgents] = useState<{ id: number; companyName: string }[]>([]);
+  const [emptyReturnDepots, setEmptyReturnDepots] = useState<{ id: number; companyName: string; businessType?: string }[]>([]);
+
+  // Helper function to update specific dropdown visibility
+  const toggleSuggestions = (field: string, visible: boolean) => {
+    setShowSuggestions(prev => ({
+      ...prev,
+      [field]: visible
+    }));
+  };
+
+  // Function to fetch EXP handling agents by port
+  const fetchExpHandlingAgentsByPort = async (portId: number) => {
+    try {
+      const res = await fetch("http://localhost:8000/addressbook");
+      const data = await res.json();
+
+      const filtered = data.filter((entry: any) => {
+        const isHandlingAgent = entry.businessType
+          ?.toLowerCase()
+          .includes("handling agent");
+
+        const linkedToPort = entry.businessPorts?.some(
+          (bp: any) => bp.portId === portId
+        );
+
+        return isHandlingAgent && linkedToPort;
+      });
+
+      setExpAgents(filtered);
+    } catch (err) {
+      console.error("Failed to fetch export handling agents:", err);
+      setExpAgents([]); // Set empty array on error
+    }
+  };
+
+  // Function to fetch IMP handling agents by port
+  const fetchImpHandlingAgentsByPort = async (portId: number) => {
+    try {
+      const res = await fetch("http://localhost:8000/addressbook");
+      const data = await res.json();
+
+      const filtered = data.filter((entry: any) => {
+        const isHandlingAgent = entry.businessType
+          ?.toLowerCase()
+          .includes("handling agent");
+
+        const linkedToPort = entry.businessPorts?.some(
+          (bp: any) => bp.portId === portId
+        );
+
+        return isHandlingAgent && linkedToPort;
+      });
+
+      setImpHandlingAgents(filtered);
+    } catch (err) {
+      console.error("Failed to fetch import handling agents:", err);
+      setImpHandlingAgents([]); // Set empty array on error
+    }
+  };
+
+  // Function to fetch empty return depots by port
+  const fetchEmptyReturnDepotsByPort = async (portId: number) => {
+    try {
+      const res = await fetch("http://localhost:8000/addressbook");
+      const data = await res.json();
+
+      const filtered = data.filter((entry: any) => {
+        const businessType = (entry.businessType || "").toLowerCase();
+
+        const isDepotOrCY =
+          businessType.includes("deport terminal") ||
+          businessType.includes("cy terminal");
+
+        const linkedToPort =
+          Array.isArray(entry.businessPorts) &&
+          entry.businessPorts.some((bp: any) => bp.portId === portId);
+
+        return isDepotOrCY && linkedToPort;
+      });
+
+      setEmptyReturnDepots(filtered);
+    } catch (err) {
+      console.error("Failed to fetch empty return depots:", err);
+      setEmptyReturnDepots([]); // Set empty array on error
+    }
+  };
+
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        const res = await fetch("http://localhost:8000/addressbook");
+        const data = await res.json();
+        const customers = data.filter((entry: any) => 
+          entry.businessType?.includes("Customer")
+        );
+        setCustomerSuggestions(customers);
+      } catch (err) {
+        console.error("Error fetching customers:", err);
+      }
+    };
+
+    fetchCustomers();
+  }, []);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const res = await fetch("http://localhost:8000/products");
+        const data = await res.json();
+        setProductSuggestions(data);
+      } catch (err) {
+        console.error("Error fetching products:", err);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  useEffect(() => {
+    const fetchPorts = async () => {
+      try {
+        const res = await fetch("http://localhost:8000/ports");
+        const data = await res.json();
+        setPortSuggestions(data);
+      } catch (err) {
+        console.error("Error fetching ports:", err);
+      }
+    };
+
+    fetchPorts();
+  }, []);
+
+  useEffect(() => {
+    const fetchAgents = async () => {
+      try {
+        const res = await fetch("http://localhost:8000/addressbook");
+        const data = await res.json();
+        const agents = data.filter((entry: any) =>
+          entry.businessType?.includes("Handling Agent") ||
+          entry.businessType?.includes("Agent")
+        );
+        setAgentSuggestions(agents);
+      } catch (err) {
+        console.error("Error fetching agents:", err);
+      }
+    };
+
+    fetchAgents();
+  }, []);
+
+  useEffect(() => {
+    const fetchDepots = async () => {
+      try {
+        const res = await fetch("http://localhost:8000/addressbook");
+        const data = await res.json();
+        const depots = data.filter((entry: any) =>
+          entry.businessType?.includes("Depot") ||
+          entry.businessType?.includes("Empty Return") ||
+          entry.businessType?.includes("Deport Terminal")
+        );
+        setDepotSuggestions(depots);
+      } catch (err) {
+        console.error("Error fetching depots:", err);
+      }
+    };
+
+    fetchDepots();
+  }, []);
 
   useEffect(() => {
     const fetchMovements = async () => {
@@ -183,97 +375,57 @@ const AddShipmentModal = ({
           portsRes.json()
         ]);
 
-        // COMPLETE dummy data filtering - ONLY for new forms
-        const isDummyData = (name: string) => {
-          if (form.id || form.quotationRefNo) return false; // Don't filter if editing or importing
-          
-          // More comprehensive dummy data detection
-          const dummyPatterns = [
-            'test', 'dummy', 'example', 'sample', 'temp', 'demo',
-            'enpl', 'patel and sons', 'jebel ali', 'nhava sheva',
-            'default', 'placeholder', 'admin', 'user'
-          ];
-          
-          const nameLower = name.toLowerCase();
-          return dummyPatterns.some(pattern => nameLower.includes(pattern));
-        };
-
-        // Filter customers - Remove ALL dummy data for new forms
+        // Process customer options
         const customers = addressBookData
-          .filter((entry: any) => {
-            if (!entry.businessType?.includes("Customer")) return false;
-            if (!form.id && !form.quotationRefNo && isDummyData(entry.companyName || '')) return false;
-            return true;
-          })
+          .filter((entry: any) => entry.businessType?.includes("Customer"))
           .map((entry: any) => ({ id: entry.id, name: entry.companyName }));
 
-        // Filter products - Remove ALL dummy data for new forms
-        const products = productsData
-          .filter((product: any) => {
-            if (!form.id && !form.quotationRefNo) {
-              if (isDummyData(product.productName || '') || isDummyData(product.productId || '')) {
-                return false;
-              }
-            }
-            return true;
-          })
-          .map((product: any) => ({
-            id: product.id,
-            productId: product.productId,
-            productName: product.productName,
-            productType: product.productType || ""
-          }));
+        // Process product options
+        const products = productsData.map((product: any) => ({
+          id: product.id,
+          productId: product.productId,
+          productName: product.productName,
+          productType: product.productType || ""
+        }));
 
-        // Filter ports - Remove ALL dummy data for new forms
-        const ports = portsData
-          .filter((port: any) => {
-            if (!form.id && !form.quotationRefNo && isDummyData(port.portName || '')) {
-              return false;
-            }
-            return true;
-          })
-          .map((port: any) => ({
-            id: port.id,
-            name: port.portName
-          }));
+        // Process port options
+        const ports = portsData.map((port: any) => ({
+          id: port.id,
+          name: port.portName
+        }));
 
-        // Filter agents - Remove ALL dummy data for new forms
+        // Process agent options
         const agents = addressBookData
-          .filter((entry: any) => {
-            if (!(entry.businessType?.includes("Handling Agent") || entry.businessType?.includes("Agent"))) {
-              return false;
-            }
-            if (!form.id && !form.quotationRefNo && isDummyData(entry.companyName || '')) {
-              return false;
-            }
-            return true;
-          })
+          .filter((entry: any) => 
+            entry.businessType?.includes("Handling Agent") || 
+            entry.businessType?.includes("Agent")
+          )
           .map((entry: any) => ({ id: entry.id, name: entry.companyName }));
 
-        // Filter depots - Remove ALL dummy data for new forms
+        // Process depot options
         const depots = addressBookData
-          .filter((entry: any) => {
-            const hasCorrectType = (entry.businessType?.includes("Depot") || 
-                                    entry.businessType?.includes("Empty Return") ||
-                                    entry.businessType?.includes("Deport Terminal"));
-            if (!hasCorrectType) return false;
-            if (!form.id && !form.quotationRefNo && isDummyData(entry.companyName || '')) {
-              return false;
-            }
-            return true;
-          })
+          .filter((entry: any) => 
+            entry.businessType?.includes("Depot") || 
+            entry.businessType?.includes("Empty Return") ||
+            entry.businessType?.includes("Deport Terminal")
+          )
           .map((entry: any) => ({ id: entry.id, name: entry.companyName }));
 
-        // Shipping terms - Keep only standard terms
-        let shippingTerms: Option[] = [
+        // Define shipping terms
+        let shippingTerms = [
+          { id: "CY-CY", name: "CY-CY" },
+          { id: "CY-Door", name: "CY-Door" },
+          { id: "Door-CY", name: "Door-CY" },
+          { id: "Door-Door", name: "Door-Door" },
+          { id: "CY-CFS", name: "CY-CFS" },
+          { id: "CFS-CY", name: "CFS-CY" },
+          { id: "CFS-CFS", name: "CFS-CFS" },
+          { id: "Door-CFS", name: "Door-CFS" },
+          { id: "CFS-Door", name: "CFS-Door" }
         ];
 
-        // Only add custom shipping term if editing and it doesn't exist
         if (form.id && form.shippingTerm && !shippingTerms.find(t => t.id === form.shippingTerm)) {
-          shippingTerms.push({
-            id: form.shippingTerm,
-            name: form.shippingTerm
-          });
+          shippingTerms.push({ id: form.shippingTerm, name: form.shippingTerm });
         }
           
         setSelectOptions({
@@ -285,56 +437,67 @@ const AddShipmentModal = ({
           shippingTerm: shippingTerms
         });
 
-        // ONLY populate form fields in EDIT mode
+        // FIX: If this is an edit operation, populate display names for all searchable fields
         if (form.id) {
-          console.log("Edit mode - populating form fields");
-          
-          // Find and set customer name
-          const selectedCustomer = customers.find((c: Option) => c.id.toString() === form.customerId?.toString());
+          // Find and set customer display name
+          const selectedCustomer = customers.find(
+            (c: any) => c.id.toString() === form.customerName?.toString()
+          );
           if (selectedCustomer) {
-            setForm((prev: any) => ({ ...prev, customerName: selectedCustomer.id.toString() }));
-          }
-
-          // Find and set product info
-          const selectedProduct = products.find((p: ProductOption) => p.id.toString() === form.productId?.toString());
-          if (selectedProduct) {
             setForm((prev: any) => ({
               ...prev,
-              productId: selectedProduct.id,
-              productName: `${selectedProduct.productId} - ${selectedProduct.productName} - ${selectedProduct.productType}`
+              customerDisplayName: selectedCustomer.name,
             }));
           }
 
-          // Map form fields for edit mode
-          setForm((prev: any) => ({
-            ...prev,
-            // Port mappings - convert IDs to strings
-            portOfLoading: form.polPortId?.toString() || form.portOfLoading || "",
-            portOfDischarge: form.podPortId?.toString() || form.portOfDischarge || "",
-            transhipmentPortName: form.transhipmentPortId?.toString() || "",
-            
-            // Agent mappings - convert IDs to strings
-            expHandlingAgent: form.expHandlingAgentAddressBookId?.toString() || form.expHandlingAgentId?.toString() || "",
-            impHandlingAgent: form.impHandlingAgentAddressBookId?.toString() || form.impHandlingAgentId?.toString() || "",
-            
-            // Depot mapping
-            emptyReturnDepot: form.emptyReturnDepotAddressBookId?.toString() || form.emptyReturnDepotId?.toString() || "",
-            
-            // Shipping term mapping
-            shippingTerm: form.shippingTerm || "",
-            
-            // Date mappings
-            gateClosingDate: form.gsDate ? form.gsDate.split('T')[0] : "",
-            sobDate: form.sob ? form.sob.split('T')[0] : "",
-            etaToPod: form.etaTopod ? form.etaTopod.split('T')[0] : "",
-            estimatedEmptyReturnDate: form.estimateDate ? form.estimateDate.split('T')[0] : "",
-            
-            // Other mappings
-            vesselName: form.vesselName || "",
-            quantity: form.quantity?.toString() || selectedContainers.length.toString()
-          }));
+          // Find and set product display name
+          const selectedProduct = products.find(
+            (p: any) => p.id.toString() === form.productId?.toString()
+          );
+          if (selectedProduct) {
+            setForm((prev: any) => ({
+              ...prev,
+              productDisplayName: `${selectedProduct.productId} - ${selectedProduct.productName} - ${selectedProduct.productType}`,
+            }));
+          }
 
-          // Fetch additional data for edit mode
+          // Find and set port display names
+          const selectedPolPort = ports.find(
+            (p: any) => p.id.toString() === form.portOfLoading?.toString()
+          );
+          if (selectedPolPort) {
+            setForm((prev: any) => ({
+              ...prev,
+              portOfLoadingName: selectedPolPort.name,
+            }));
+          }
+
+          const selectedPodPort = ports.find(
+            (p: any) => p.id.toString() === form.portOfDischarge?.toString()
+          );
+          if (selectedPodPort) {
+            setForm((prev: any) => ({
+              ...prev,
+              portOfDischargeName: selectedPodPort.name,
+            }));
+          }
+
+          // FIX: Fetch filtered data immediately after setting port names
+          const fetchPromises = [];
+          
+          if (form.portOfLoading) {
+            fetchPromises.push(fetchExpHandlingAgentsByPort(Number(form.portOfLoading)));
+          }
+          
+          if (form.portOfDischarge) {
+            fetchPromises.push(fetchImpHandlingAgentsByPort(Number(form.portOfDischarge)));
+            fetchPromises.push(fetchEmptyReturnDepotsByPort(Number(form.portOfDischarge)));
+          }
+
+          // Wait for all filtered data to be fetched
+          await Promise.all(fetchPromises);
+
+          // Fetch and set other display names (existing code)
           if (form.consigneeId || form.consigneeAddressBookId) {
             try {
               const consigneeId = form.consigneeAddressBookId || form.consigneeId;
@@ -375,7 +538,7 @@ const AddShipmentModal = ({
     };
 
     fetchSelectOptions();
-  }, [form.id, form.quotationRefNo]); // Add quotationRefNo to dependencies
+  }, [form.id]); // Re-run when form.id changes (edit vs new)
 
   // Effect to handle selectedContainers when in edit mode
   // Note: selectedContainers are managed by the parent ShipmentTable component
@@ -404,8 +567,11 @@ const AddShipmentModal = ({
       // Build payload with only the fields that have values
       const payload: any = {};
 
-      // Basic fields
-      if (form.quotationRefNo) payload.quotationRefNumber = form.quotationRefNo;
+      // Basic fields - FIX: Make quotation reference number optional
+      if (form.quotationRefNo && form.quotationRefNo.trim() !== '') {
+        payload.quotationRefNumber = form.quotationRefNo;
+      }
+      
       if (form.date) payload.date = new Date(form.date).toISOString();
       if (form.jobNumber) payload.jobNumber = form.jobNumber;
       if (form.referenceNumber) payload.refNumber = form.referenceNumber;
@@ -416,7 +582,15 @@ const AddShipmentModal = ({
       if (form.customerName) payload.custAddressBookId = parseInt(form.customerName);
       if (form.consigneeId) payload.consigneeAddressBookId = parseInt(form.consigneeId);
       if (form.shipperId) payload.shipperAddressBookId = parseInt(form.shipperId);
-      if (form.productId) payload.productId = form.productId; // this is now a number ✅
+      
+      // FIX: Convert productId to number properly
+      if (form.productId) {
+        const productId = typeof form.productId === 'string' ? parseInt(form.productId) : form.productId;
+        if (!isNaN(productId)) {
+          payload.productId = productId;
+        }
+      }
+      
       if (form.portOfLoading) payload.polPortId = parseInt(form.portOfLoading);
       if (form.portOfDischarge) payload.podPortId = parseInt(form.portOfDischarge);
       if (form.expHandlingAgent) payload.expHandlingAgentAddressBookId = parseInt(form.expHandlingAgent);
@@ -454,6 +628,9 @@ const AddShipmentModal = ({
           depotName: c.depotName || "",
         }));
       }
+      
+      console.log('Payload being sent:', payload); // Debug log
+      
       if (form.id) {
         // For PATCH (Edit)
         await axios.patch(`http://localhost:8000/shipment/${form.id}`, payload);
@@ -492,27 +669,13 @@ const AddShipmentModal = ({
 
       const productList = data.product
         ? [{
-          id: data.product.id ?? 0, // numeric ID from DB
+          id: data.product.id ?? 0,
           productId: data.product.productId,
           productName: data.product.productName,
           productType: data.product.productType || ""
         }]
         : [];
 
-      // Step 2: Set options in state
-      setSelectOptions((prev) => ({
-        ...prev,
-        customer,
-        product: productList,
-        // Keep others unchanged (or update as needed)
-        port: prev.port,
-        agent: prev.agent,
-        depot: prev.depot,
-        shippingTerm: prev.shippingTerm,
-      }));
-
-      // Step 3: Find the selected product from list
-      // 🧠 Find the selected product from productList before setting form
       const selectedProduct = productList.find(
         (p) => p.productId === data.product?.productId
       );
@@ -524,16 +687,13 @@ const AddShipmentModal = ({
       });
       const port = Array.from(portMap.values());
 
-      // ✅ Agents: Use fallback to fetch if not populated
       const agentMap = new Map<number, string>();
 
-      // Helper to fetch name if agent relation is missing
       const fetchAgentNameById = async (id: number) => {
         const res = await axios.get(`http://localhost:8000/addressbook/${id}`);
         return res.data.companyName;
       };
 
-      // EXP Agent
       if (data.expHandlingAgentAddressBook) {
         agentMap.set(
           data.expHandlingAgentAddressBook.id,
@@ -544,7 +704,6 @@ const AddShipmentModal = ({
         agentMap.set(data.expHandlingAgentAddressBookId, name);
       }
 
-      // IMP Agent
       if (data.impHandlingAgentAddressBook) {
         agentMap.set(
           data.impHandlingAgentAddressBook.id,
@@ -563,7 +722,6 @@ const AddShipmentModal = ({
         name
       }));
 
-      // Depot
       const depot = [];
       if (data.emptyReturnAddressBook) {
         depot.push({
@@ -584,7 +742,8 @@ const AddShipmentModal = ({
 
       setSelectOptions({ customer, product: productList, port, agent, depot, shippingTerm });
 
-      setForm({
+      // FIX: First set the form with basic data
+      const updatedForm = {
         ...form,
         shippingTerm: data.shippingTerm || "",
         customerName: data.custAddressBook?.id?.toString() || "",
@@ -595,18 +754,58 @@ const AddShipmentModal = ({
         productName: selectedProduct
           ? `${selectedProduct.productId} - ${selectedProduct.productName} - ${selectedProduct.productType}`
           : "",
+        productDisplayName: selectedProduct
+          ? `${selectedProduct.productId} - ${selectedProduct.productName} - ${selectedProduct.productType}`
+          : "",
         portOfLoading: data.polPort?.id?.toString() || "",
+        portOfLoadingName: data.polPort?.portName || "",
         portOfDischarge: data.podPort?.id?.toString() || "",
+        portOfDischargeName: data.podPort?.portName || "",
         freeDays1: data.polFreeDays || "",
         detentionRate1: data.polDetentionRate || "",
         freeDays2: data.podFreeDays || "",
         detentionRate2: data.podDetentionRate || "",
-        expHandlingAgent: (data.expHandlingAgentAddressBook?.id || data.expHandlingAgentAddressBookId)?.toString() || "",
-        impHandlingAgent: (data.impHandlingAgentAddressBook?.id || data.impHandlingAgentAddressBookId)?.toString() || "",
-        emptyReturnDepot: (data.emptyReturnAddressBook?.id || data.emptyReturnAddressBookId)?.toString() || "",
+        expHandlingAgent: (
+          data.expHandlingAgentAddressBook?.id ||
+          data.expHandlingAgentAddressBookId
+        )?.toString() || "",
+        expHandlingAgentName: data.expHandlingAgentAddressBook?.companyName || 
+          (data.expHandlingAgentAddressBookId ? await fetchAgentNameById(data.expHandlingAgentAddressBookId) : ""),
+        impHandlingAgent: (
+          data.impHandlingAgentAddressBook?.id ||
+          data.impHandlingAgentAddressBookId
+        )?.toString() || "",
+        impHandlingAgentName: data.impHandlingAgentAddressBook?.companyName || 
+          (data.impHandlingAgentAddressBookId ? await fetchAgentNameById(data.impHandlingAgentAddressBookId) : ""),
+        emptyReturnDepot: (
+          data.emptyReturnAddressBook?.id || data.emptyReturnAddressBookId
+        )?.toString() || "",
+        emptyReturnDepotName: data.emptyReturnAddressBook?.companyName || 
+          (data.emptyReturnAddressBookId ? await fetchAgentNameById(data.emptyReturnAddressBookId) : ""),
         enableTranshipmentPort: !!data.transhipmentPort,
-        transhipmentPortName: data.transhipmentPort ? data.transhipmentPort.id.toString() : undefined,
-      });
+        transhipmentPortName: data.transhipmentPort
+          ? data.transhipmentPort.id.toString()
+          : undefined,
+      };
+
+      // Set the form first
+      setForm(updatedForm);
+
+      // FIX: After setting the form, fetch the filtered agents and depots
+      const fetchPromises = [];
+      
+      if (data.polPort?.id) {
+        fetchPromises.push(fetchExpHandlingAgentsByPort(data.polPort.id));
+      }
+      
+      if (data.podPort?.id) {
+        fetchPromises.push(fetchImpHandlingAgentsByPort(data.podPort.id));
+        fetchPromises.push(fetchEmptyReturnDepotsByPort(data.podPort.id));
+      }
+
+      // Wait for all filtered data to be fetched
+      await Promise.all(fetchPromises);
+
     } catch (err) {
       console.error("Failed to import data from quotation", err);
       alert("Quotation not found or fetch error");
@@ -634,21 +833,14 @@ const AddShipmentModal = ({
 
 
   useEffect(() => {
-    const fetchConsignee = async () => {
+    const fetchConsignee: () => Promise<void> = async () => {
       try {
         const res = await fetch("http://localhost:8000/addressbook");
         const data = await res.json();
-        
-        // Filter dummy data for new forms only
-        const isDummyData = (name: string) => {
-          if (form.id || form.quotationRefNo) return false;
-          const dummyPatterns = ['test', 'dummy', 'example', 'sample', 'temp', 'demo', 'enpl', 'patel and sons', 'admin', 'user'];
-          return dummyPatterns.some(pattern => name.toLowerCase().includes(pattern));
-        };
-        
-        const consignee = data.filter((entry: any) =>
-          entry.businessType?.includes("Consignee") &&
-          (!isDummyData(entry.companyName || ''))
+        const consignee = data.filter(
+          (entry: any) =>
+            entry.businessType &&
+            entry.businessType.includes("Consignee")
         );
         setConsigneeSuggestions(consignee);
       } catch (err) {
@@ -657,24 +849,18 @@ const AddShipmentModal = ({
     };
 
     fetchConsignee();
-  }, [form.id, form.quotationRefNo]);
+  }, []);
 
 
   useEffect(() => {
-    const fetchShipper = async () => {
+    const fetchShipper: () => Promise<void> = async () => {
       try {
         const res = await fetch("http://localhost:8000/addressbook");
         const data = await res.json();
-        
-        const isDummyData = (name: string) => {
-          if (form.id || form.quotationRefNo) return false;
-          const dummyPatterns = ['test', 'dummy', 'example', 'sample', 'temp', 'demo', 'enpl', 'patel and sons', 'admin', 'user'];
-          return dummyPatterns.some(pattern => name.toLowerCase().includes(pattern));
-        };
-        
-        const shipper = data.filter((entry: any) =>
-          entry.businessType?.includes("Shipper") &&
-          (!isDummyData(entry.companyName || ''))
+        const shipper = data.filter(
+          (entry: any) =>
+            entry.businessType &&
+            entry.businessType.includes("Shipper")
         );
         setShipperSuggestions(shipper);
       } catch (err) {
@@ -683,25 +869,19 @@ const AddShipmentModal = ({
     };
 
     fetchShipper();
-  }, [form.id, form.quotationRefNo]);
+  }, []);
 
 
 
   useEffect(() => {
-    const fetchCarrier = async () => {
+    const fetchCarrier: () => Promise<void> = async () => {
       try {
         const res = await fetch("http://localhost:8000/addressbook");
         const data = await res.json();
-        
-        const isDummyData = (name: string) => {
-          if (form.id || form.quotationRefNo) return false;
-          const dummyPatterns = ['test', 'dummy', 'example', 'sample', 'temp', 'demo', 'enpl', 'patel and sons', 'admin', 'user'];
-          return dummyPatterns.some(pattern => name.toLowerCase().includes(pattern));
-        };
-        
-        const carrier = data.filter((entry: any) =>
-          entry.businessType?.includes("Carrier") &&
-          (!isDummyData(entry.companyName || ''))
+        const carrier = data.filter(
+          (entry: any) =>
+            entry.businessType &&
+            entry.businessType.includes("Carrier")
         );
         setCarrierSuggestions(carrier);
       } catch (err) {
@@ -710,7 +890,7 @@ const AddShipmentModal = ({
     };
 
     fetchCarrier();
-  }, [form.id, form.quotationRefNo]);
+  }, []);
 
   useEffect(() => {
     if (form.etaToPod && form.freeDays2) {
@@ -805,7 +985,9 @@ const AddShipmentModal = ({
             {/* Basic Information */}
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-white text-base font-semibold">Basic Information</h3>
+                <h3 className="text-white text-base font-semibold">
+                  Basic Information
+                </h3>
               </div>
               <div className="bg-neutral-800 p-4 rounded space-y-4">
                 <div className="grid grid-cols-2 gap-x-6 gap-y-4">
@@ -859,84 +1041,141 @@ const AddShipmentModal = ({
                     </label>
                     <select
                       value={form.shippingTerm || ""}
-                      onChange={(e) => setForm({ ...form, shippingTerm: e.target.value })}
-                      disabled={!!form.quotationRefNo} // Disable if imported from quotation
+                      onChange={(e) =>
+                        setForm({ ...form, shippingTerm: e.target.value })
+                      }
+                      disabled={!!form.quotationRefNo}
                       className={`w-full p-2 text-white rounded border ${
-                        form.quotationRefNo 
-                          ? 'bg-gray-700 border-gray-600 cursor-not-allowed opacity-75' 
-                          : 'bg-gray-900 border-gray-700'
+                        form.quotationRefNo
+                          ? "bg-gray-700 border-gray-600 cursor-not-allowed opacity-75"
+                          : "bg-gray-900 border-gray-700"
                       }`}
                     >
                       <option value="">Select Shipping Term</option>
                       {selectOptions.shippingTerm.map((term) => (
-                        <option key={term.id} value={term.id}>{term.name}</option>
+                        <option key={term.id} value={term.id}>
+                          {term.name}
+                        </option>
                       ))}
                     </select>
                   </div>
-                  <div>
+                  <div className="relative">
                     <label className="block text-sm text-neutral-200 mb-1">
                       Customer Name <span className="text-red-500">*</span>
                     </label>
-                   <select
-                  value={form.customerName || ""}
-                  onChange={(e) => setForm({ ...form, customerName: e.target.value })}
-                  className="w-full p-2 bg-gray-900 text-white rounded border border-gray-700"
-                >
-                  <option value="">Select Customer</option>
-                  {selectOptions.customer.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
+                    <Input
+                      type="text"
+                      value={form.customerDisplayName || ""}
+                      onChange={(e) => {
+                        setForm((prev: any) => ({
+                          ...prev,
+                          customerDisplayName: e.target.value,
+                          customerName: null,
+                        }));
+                        toggleSuggestions('customer', true);
+                      }}
+                      onFocus={() => toggleSuggestions('customer', true)}
+                      onBlur={() => setTimeout(() => toggleSuggestions('customer', false), 150)}
+                      placeholder="Start typing customer name..."
+                      className="w-full p-2.5 bg-neutral-800 text-white rounded border border-neutral-700"
+                    />
+                    {showSuggestions.customer && form.customerDisplayName && (
+                      <div className="absolute z-[9999] w-full mt-1 max-h-40 overflow-hidden">
+                        <ul className="bg-neutral-800 border border-neutral-700 rounded shadow-lg max-h-40 overflow-y-auto">
+                          {customerSuggestions
+                            .filter((c) =>
+                              c.companyName.toLowerCase().includes(form.customerDisplayName.toLowerCase())
+                            )
+                            .slice(0, 10) // Limit to 10 results to prevent overflow
+                            .map((company) => (
+                              <li
+                                key={company.id}
+                                onMouseDown={() => {
+                                  setForm((prev: any) => ({
+                                    ...prev,
+                                    customerDisplayName: company.companyName,
+                                    customerName: company.id,
+                                  }));
+                                  toggleSuggestions('customer', false);
+                                }}
+                                className="px-3 py-2 hover:bg-neutral-700 cursor-pointer text-sm text-white border-b border-neutral-600 last:border-b-0"
+                              >
+                                {company.companyName}
+                              </li>
+                            ))}
+                          {customerSuggestions.filter((c) =>
+                            c.companyName.toLowerCase().includes(form.customerDisplayName?.toLowerCase())
+                          ).length === 0 && (
+                            <li className="px-3 py-2 text-neutral-400 text-sm">
+                              No match found
+                            </li>
+                          )}
+                        </ul>
+                      </div>
+                    )}
                   </div>
-                  <div>
+
+                  {/* Product Name - Fix dropdown positioning */}
+                  <div className="relative">
                     <label className="block text-sm text-neutral-200 mb-1">
                       Product Name <span className="text-red-500">*</span>
                     </label>
-
-                    <Select
-                      value={form.productId?.toString() || ""}
-                      onValueChange={(value) => {
-                        const selected = selectOptions.product.find(
-                          (p) => p.id.toString() === value
-                        );
-
-                        if (selected) {
-                          setForm((prev: any) => ({
-                            ...prev,
-                            productId: selected.id,
-                            productName: `${selected.productId} - ${selected.productName} - ${selected.productType}`,
-                          }));
-                        } else {
-                          setForm((prev: any) => ({
-                            ...prev,
-                            productId: "",
-                            productName: "",
-                          }));
-                        }
+                    <Input
+                      type="text"
+                      value={form.productDisplayName || ""}
+                      onChange={(e) => {
+                        setForm((prev: any) => ({
+                          ...prev,
+                          productDisplayName: e.target.value,
+                          productId: null,
+                          productName: null,
+                        }));
+                        toggleSuggestions('product', true);
                       }}
-                    >
-                      <SelectTrigger className="w-full p-2.5 bg-neutral-800 text-white border border-neutral-700">
-                        <SelectValue placeholder="Select Product" />
-                      </SelectTrigger>
-
-                      <SelectContent className="bg-neutral-800 text-white border border-neutral-700">
-                        {selectOptions.product.length > 0 ? (
-                          selectOptions.product.map((p) => (
-                            <SelectItem key={p.id} value={p.id.toString()} className="text-white">
-                              {`${p.productId} - ${p.productName} - ${p.productType}`}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem value="no-product" disabled>
-                            No products available
-                          </SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
+                      onFocus={() => toggleSuggestions('product', true)}
+                      onBlur={() => setTimeout(() => toggleSuggestions('product', false), 150)}
+                      placeholder="Start typing product name..."
+                      className="w-full p-2.5 bg-neutral-800 text-white rounded border border-neutral-700"
+                    />
+                    {showSuggestions.product && form.productDisplayName && (
+                      <div className="absolute z-[9999] w-full mt-1 max-h-40 overflow-hidden">
+                        <ul className="bg-neutral-800 border border-neutral-700 rounded shadow-lg max-h-40 overflow-y-auto">
+                          {productSuggestions
+                            .filter((p) =>
+                              `${p.productId} - ${p.productName} - ${p.productType}`.toLowerCase().includes(form.productDisplayName.toLowerCase())
+                            )
+                            .slice(0, 10) // Limit to 10 results
+                            .map((product) => (
+                              <li
+                                key={product.id}
+                                onMouseDown={() => {
+                                  const displayName = `${product.productId} - ${product.productName} - ${product.productType}`;
+                                  setForm((prev: any) => ({
+                                    ...prev,
+                                    productDisplayName: displayName,
+                                    productId: product.id,
+                                    productName: displayName,
+                                  }));
+                                  toggleSuggestions('product', false);
+                                }}
+                                className="px-3 py-2 hover:bg-neutral-700 cursor-pointer text-sm text-white border-b border-neutral-600 last:border-b-0"
+                              >
+                                {`${product.productId} - ${product.productName} - ${product.productType}`}
+                              </li>
+                            ))}
+                          {productSuggestions.filter((p) =>
+                            `${p.productId} - ${p.productName} - ${p.productType}`.toLowerCase().includes(form.productDisplayName?.toLowerCase())
+                          ).length === 0 && (
+                            <li className="px-3 py-2 text-neutral-400 text-sm">
+                              No match found
+                            </li>
+                          )}
+                        </ul>
+                      </div>
+                    )}
                   </div>
 
-
-                  {/* Consignee Name */}
+                  {/* Consignee Name - Fix dropdown visibility */}
                   <div className="relative">
                     <label className="block text-sm text-neutral-200 mb-1">
                       Consignee Name
@@ -950,20 +1189,18 @@ const AddShipmentModal = ({
                           consigneeName: e.target.value,
                           consigneeId: null,
                         }));
-                        setShowSuggestions(true);
+                        toggleSuggestions('consignee', true);
                       }}
-                      onFocus={() => setShowSuggestions(true)}
-                      onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                      onFocus={() => toggleSuggestions('consignee', true)}
+                      onBlur={() => setTimeout(() => toggleSuggestions('consignee', false), 150)}
                       placeholder="Start typing consignee name..."
                       className="w-full p-2.5 bg-neutral-800 text-white rounded border border-neutral-700"
                     />
-                    {showSuggestions && form.consigneeName && (
-                      <ul className="absolute z-10 w-full bg-neutral-800 border border-neutral-700 rounded mt-1 max-h-40 overflow-y-auto">
+                    {showSuggestions.consignee && form.consigneeName && (
+                      <ul className="absolute z-[9999] w-full bg-neutral-800 border border-neutral-700 rounded mt-1 max-h-40 overflow-y-auto shadow-lg">
                         {consigneeSuggestions
                           .filter((c) =>
-                            c.companyName
-                              .toLowerCase()
-                              .includes(form.consigneeName.toLowerCase())
+                            c.companyName.toLowerCase().includes(form.consigneeName.toLowerCase())
                           )
                           .map((company) => (
                             <li
@@ -974,7 +1211,7 @@ const AddShipmentModal = ({
                                   consigneeName: company.companyName,
                                   consigneeId: company.id,
                                 }));
-                                setShowSuggestions(false);
+                                toggleSuggestions('consignee', false);
                               }}
                               className="px-3 py-1 hover:bg-neutral-700 cursor-pointer text-sm text-white"
                             >
@@ -982,18 +1219,17 @@ const AddShipmentModal = ({
                             </li>
                           ))}
                         {consigneeSuggestions.filter((c) =>
-                          c.companyName
-                            .toLowerCase()
-                            .includes(form.consigneeName?.toLowerCase())
+                          c.companyName.toLowerCase().includes(form.consigneeName?.toLowerCase())
                         ).length === 0 && (
-                            <li className="px-3 py-1 text-neutral-400 text-sm">
-                              No match found
-                            </li>
-                          )}
+                          <li className="px-3 py-1 text-neutral-400 text-sm">
+                            No match found
+                          </li>
+                        )}
                       </ul>
                     )}
                   </div>
-                  {/* Shipper Name */}
+
+                  {/* Shipper Name - Fix dropdown visibility */}
                   <div className="relative">
                     <label className="block text-sm text-neutral-200 mb-1">
                       Shipper Name
@@ -1007,20 +1243,18 @@ const AddShipmentModal = ({
                           shipperName: e.target.value,
                           shipperId: null,
                         }));
-                        setShowSuggestions(true);
+                        toggleSuggestions('shipper', true);
                       }}
-                      onFocus={() => setShowSuggestions(true)}
-                      onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                      onFocus={() => toggleSuggestions('shipper', true)}
+                      onBlur={() => setTimeout(() => toggleSuggestions('shipper', false), 150)}
                       placeholder="Start typing shipper name..."
                       className="w-full p-2.5 bg-neutral-800 text-white rounded border border-neutral-700"
                     />
-                    {showSuggestions && form.shipperName && (
-                      <ul className="absolute z-10 w-full bg-neutral-800 border border-neutral-700 rounded mt-1 max-h-40 overflow-y-auto">
+                    {showSuggestions.shipper && form.shipperName && (
+                      <ul className="absolute z-[9999] w-full bg-neutral-800 border border-neutral-700 rounded mt-1 max-h-40 overflow-y-auto shadow-lg">
                         {shipperSuggestions
                           .filter((c) =>
-                            c.companyName
-                              .toLowerCase()
-                              .includes(form.shipperName.toLowerCase())
+                            c.companyName.toLowerCase().includes(form.shipperName.toLowerCase())
                           )
                           .map((company) => (
                             <li
@@ -1031,7 +1265,7 @@ const AddShipmentModal = ({
                                   shipperName: company.companyName,
                                   shipperId: company.id,
                                 }));
-                                setShowSuggestions(false);
+                                toggleSuggestions('shipper', false);
                               }}
                               className="px-3 py-1 hover:bg-neutral-700 cursor-pointer text-sm text-white"
                             >
@@ -1039,14 +1273,12 @@ const AddShipmentModal = ({
                             </li>
                           ))}
                         {shipperSuggestions.filter((c) =>
-                          c.companyName
-                            .toLowerCase()
-                            .includes(form.shipperName?.toLowerCase())
+                          c.companyName.toLowerCase().includes(form.shipperName?.toLowerCase())
                         ).length === 0 && (
-                            <li className="px-3 py-1 text-neutral-400 text-sm">
-                              No match found
-                            </li>
-                          )}
+                          <li className="px-3 py-1 text-neutral-400 text-sm">
+                            No match found
+                          </li>
+                        )}
                       </ul>
                     )}
                   </div>
@@ -1057,39 +1289,125 @@ const AddShipmentModal = ({
             {/* Port Information */}
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-white text-base font-semibold">Port Information</h3>
+                <h3 className="text-white text-base font-semibold">
+                  Port Information
+                </h3>
               </div>
               <div className="bg-neutral-800 p-4 rounded space-y-4">
                 <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-                  <div>
+                  {/* Port of Loading - Fix dropdown visibility */}
+                  <div className="relative">
                     <label className="block text-sm text-neutral-200 mb-1">
                       Port of Loading <span className="text-red-500">*</span>
                     </label>
-                    <select
-                      value={form.portOfLoading || ""}
-                      onChange={(e) => setForm({ ...form, portOfLoading: e.target.value })}
-                      className="w-full p-2 bg-gray-900 text-white rounded border border-gray-700"
-                    >
-                      <option value="">Select Port</option>
-                      {selectOptions.port.map((p) => (
-                        <option key={p.id} value={p.id}>{p.name}</option>
-                      ))}
-                    </select>
+                    <Input
+                      type="text"
+                      value={form.portOfLoadingName || ""}
+                      onChange={(e) => {
+                        setForm((prev: any) => ({
+                          ...prev,
+                          portOfLoadingName: e.target.value,
+                          portOfLoading: null,
+                        }));
+                        toggleSuggestions('portLoading', true);
+                      }}
+                      onFocus={() => toggleSuggestions('portLoading', true)}
+                      onBlur={() => setTimeout(() => toggleSuggestions('portLoading', false), 150)}
+                      placeholder="Start typing port name..."
+                      className="w-full p-2.5 bg-neutral-800 text-white rounded border border-neutral-700"
+                    />
+                    {showSuggestions.portLoading && form.portOfLoadingName && (
+                      <ul className="absolute z-[9999] w-full bg-neutral-800 border border-neutral-700 rounded mt-1 max-h-40 overflow-y-auto shadow-lg">
+                        {portSuggestions
+                          .filter((p) =>
+                            p.portName.toLowerCase().includes(form.portOfLoadingName.toLowerCase())
+                          )
+                          .map((port) => (
+                            <li
+                              key={port.id}
+                              onMouseDown={() => {
+                                setForm((prev: any) => ({
+                                  ...prev,
+                                  portOfLoadingName: port.portName,
+                                  portOfLoading: port.id,
+                                }));
+                                toggleSuggestions('portLoading', false);
+                                
+                                // Trigger fetching of EXP handling agents when port is selected
+                                fetchExpHandlingAgentsByPort(port.id);
+                              }}
+                              className="px-3 py-1 hover:bg-neutral-700 cursor-pointer text-sm text-white"
+                            >
+                              {port.portName}
+                            </li>
+                          ))}
+                        {portSuggestions.filter((p) =>
+                          p.portName.toLowerCase().includes(form.portOfLoadingName?.toLowerCase())
+                        ).length === 0 && (
+                          <li className="px-3 py-1 text-neutral-400 text-sm">
+                            No match found
+                          </li>
+                        )}
+                      </ul>
+                    )}
                   </div>
-                  <div>
+
+                  {/* Port of Discharge - Fix dropdown visibility */}
+                  <div className="relative">
                     <label className="block text-sm text-neutral-200 mb-1">
                       Port of Discharge <span className="text-red-500">*</span>
                     </label>
-                    <select
-                      value={form.portOfDischarge || ""}
-                      onChange={(e) => setForm({ ...form, portOfDischarge: e.target.value })}
-                      className="w-full p-2 bg-gray-900 text-white rounded border border-gray-700"
-                    >
-                      <option value="">Select Port</option>
-                      {selectOptions.port.map((p) => (
-                        <option key={p.id} value={p.id}>{p.name}</option>
-                      ))}
-                    </select>
+                    <Input
+                      type="text"
+                      value={form.portOfDischargeName || ""}
+                      onChange={(e) => {
+                        setForm((prev: any) => ({
+                          ...prev,
+                          portOfDischargeName: e.target.value,
+                          portOfDischarge: null,
+                        }));
+                        toggleSuggestions('portDischarge', true);
+                      }}
+                      onFocus={() => toggleSuggestions('portDischarge', true)}
+                      onBlur={() => setTimeout(() => toggleSuggestions('portDischarge', false), 150)}
+                      placeholder="Start typing port name..."
+                      className="w-full p-2.5 bg-neutral-800 text-white rounded border border-neutral-700"
+                    />
+                    {showSuggestions.portDischarge && form.portOfDischargeName && (
+                      <ul className="absolute z-[9999] w-full bg-neutral-800 border border-neutral-700 rounded mt-1 max-h-40 overflow-y-auto shadow-lg">
+                        {portSuggestions
+                          .filter((p) =>
+                            p.portName.toLowerCase().includes(form.portOfDischargeName.toLowerCase())
+                          )
+                          .map((port) => (
+                            <li
+                              key={port.id}
+                              onMouseDown={() => {
+                                setForm((prev: any) => ({
+                                  ...prev,
+                                  portOfDischargeName: port.portName,
+                                  portOfDischarge: port.id,
+                                }));
+                                toggleSuggestions('portDischarge', false);
+                                
+                                // Trigger fetching of IMP handling agents and depots when port is selected
+                                fetchImpHandlingAgentsByPort(port.id);
+                                fetchEmptyReturnDepotsByPort(port.id);
+                              }}
+                              className="px-3 py-1 hover:bg-neutral-700 cursor-pointer text-sm text-white"
+                            >
+                              {port.portName}
+                            </li>
+                          ))}
+                        {portSuggestions.filter((p) =>
+                          p.portName.toLowerCase().includes(form.portOfDischargeName?.toLowerCase())
+                        ).length === 0 && (
+                          <li className="px-3 py-1 text-neutral-400 text-sm">
+                            No match found
+                          </li>
+                        )}
+                      </ul>
+                    )}
                   </div>
 
                   <div className="flex w-full gap-4 col-span-2">
@@ -1190,43 +1508,84 @@ const AddShipmentModal = ({
             {/* Handling Agents */}
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-white text-base font-semibold">Handling Agents</h3>
+                <h3 className="text-white text-base font-semibold">
+                  Handling Agents
+                </h3>
               </div>
               <div className="bg-neutral-800 p-4 rounded space-y-4">
                 <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                  {/* EXP Handling Agent - Change to select dropdown */}
                   <div>
                     <label className="block text-sm text-neutral-200 mb-1">
                       EXP Handling Agent <span className="text-red-500">*</span>
                     </label>
                     <select
-                  value={form.expHandlingAgent || ""}
-                  onChange={(e) =>
-                    setForm({ ...form, expHandlingAgent: e.target.value })
-                  }
-                  className="w-full p-2 bg-gray-900 text-white rounded border border-gray-700"
-                >
-                  <option value="">Select Agent</option>
-                  {selectOptions.agent.map((a) => (
-                    <option key={a.id} value={a.id}>{a.name}</option>
-                  ))}
-                </select>
+                      value={form.expHandlingAgent || ""}
+                      onChange={(e) => {
+                        const selectedId = Number(e.target.value);
+                        const selected = expAgents.find((a) => a.id === selectedId);
+                        setForm((prev: any) => ({
+                          ...prev,
+                          expHandlingAgent: selectedId.toString(),
+                          expHandlingAgentName: selected?.companyName || "",
+                        }));
+                      }}
+                      className="w-full p-2.5 bg-neutral-800 text-white rounded border border-neutral-700"
+                    >
+                      <option value="">
+                        {!form.portOfLoading ? "First Select Port of Loading" : "Select Handling Agent"}
+                      </option>
+                      {Array.isArray(expAgents) && expAgents.length > 0 ? (
+                        expAgents.map((agent) => (
+                          <option key={agent.id} value={agent.id}>
+                            {agent.companyName}
+                          </option>
+                        ))
+                      ) : (
+                        form.portOfLoading && expAgents.length === 0 && (
+                          <option value="" disabled>
+                            Loading agents...
+                          </option>
+                        )
+                      )}
+                    </select>
                   </div>
+
+                  {/* IMP Handling Agent - Change to select dropdown */}
                   <div>
                     <label className="block text-sm text-neutral-200 mb-1">
                       IMP Handling Agent <span className="text-red-500">*</span>
                     </label>
-                     <select
-                  value={form.impHandlingAgent || ""}
-                  onChange={(e) =>
-                    setForm({ ...form, impHandlingAgent: e.target.value })
-                  }
-                  className="w-full p-2 bg-gray-900 text-white rounded border border-gray-700"
-                >
-                  <option value="">Select Agent</option>
-                  {selectOptions.agent.map((a) => (
-                    <option key={a.id} value={a.id}>{a.name}</option>
-                  ))}
-                </select>
+                    <select
+                      value={form.impHandlingAgent || ""}
+                      onChange={(e) => {
+                        const selectedId = Number(e.target.value);
+                        const selected = impHandlingAgents.find((a) => a.id === selectedId);
+                        setForm((prev: any) => ({
+                          ...prev,
+                          impHandlingAgent: selectedId.toString(),
+                          impHandlingAgentName: selected?.companyName || "",
+                        }));
+                      }}
+                      className="w-full p-2.5 bg-neutral-800 text-white rounded border border-neutral-700"
+                    >
+                      <option value="">
+                        {!form.portOfDischarge ? "First Select Port of Discharge" : "Select Handling Agent"}
+                      </option>
+                      {Array.isArray(impHandlingAgents) && impHandlingAgents.length > 0 ? (
+                        impHandlingAgents.map((agent) => (
+                          <option key={agent.id} value={agent.id}>
+                            {agent.companyName}
+                          </option>
+                        ))
+                      ) : (
+                        form.portOfDischarge && impHandlingAgents.length === 0 && (
+                          <option value="" disabled>
+                            Loading agents...
+                          </option>
+                        )
+                      )}
+                    </select>
                   </div>
                 </div>
               </div>
@@ -1235,7 +1594,9 @@ const AddShipmentModal = ({
             {/* Container Information */}
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-white text-base font-semibold">Add Inventory</h3>
+                <h3 className="text-white text-base font-semibold">
+                  Add Inventory
+                </h3>
               </div>
               <div className="bg-neutral-800 p-4 rounded space-y-4">
                 <div className="mb-4">
@@ -1368,10 +1729,13 @@ const AddShipmentModal = ({
               </div>
             </div>
 
-            {/* Vessel Details */}
+
+            {/* Vessel Details - Fix carrier dropdown visibility */}
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-white text-base font-semibold">Vessel Details</h3>
+                <h3 className="text-white text-base font-semibold">
+                  Vessel Details
+                </h3>
               </div>
               <div className="bg-neutral-800 p-4 rounded space-y-4">
                 <div className="grid grid-cols-2 gap-x-6 gap-y-4">
@@ -1388,20 +1752,18 @@ const AddShipmentModal = ({
                           carrierName: e.target.value,
                           carrierId: null,
                         }));
-                        setShowSuggestions(true);
+                        toggleSuggestions('carrier', true);
                       }}
-                      onFocus={() => setShowSuggestions(true)}
-                      onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                      onFocus={() => toggleSuggestions('carrier', true)}
+                      onBlur={() => setTimeout(() => toggleSuggestions('carrier', false), 150)}
                       placeholder="Start typing carrier name..."
                       className="w-full p-2.5 bg-neutral-800 text-white rounded border border-neutral-700"
                     />
-                    {showSuggestions && form.carrierName && (
-                      <ul className="absolute z-10 w-full bg-neutral-800 border border-neutral-700 rounded mt-1 max-h-40 overflow-y-auto">
+                    {showSuggestions.carrier && form.carrierName && (
+                      <ul className="absolute z-[9999] w-full bg-neutral-800 border border-neutral-700 rounded mt-1 max-h-40 overflow-y-auto shadow-lg">
                         {carrierSuggestions
                           .filter((c) =>
-                            c.companyName
-                              .toLowerCase()
-                              .includes(form.carrierName.toLowerCase())
+                            c.companyName.toLowerCase().includes(form.carrierName.toLowerCase())
                           )
                           .map((company) => (
                             <li
@@ -1412,7 +1774,7 @@ const AddShipmentModal = ({
                                   carrierName: company.companyName,
                                   carrierId: company.id,
                                 }));
-                                setShowSuggestions(false);
+                                toggleSuggestions('carrier', false);
                               }}
                               className="px-3 py-1 hover:bg-neutral-700 cursor-pointer text-sm text-white"
                             >
@@ -1420,14 +1782,12 @@ const AddShipmentModal = ({
                             </li>
                           ))}
                         {carrierSuggestions.filter((c) =>
-                          c.companyName
-                            .toLowerCase()
-                            .includes(form.carrierName?.toLowerCase())
+                          c.companyName.toLowerCase().includes(form.carrierName?.toLowerCase())
                         ).length === 0 && (
-                            <li className="px-3 py-1 text-neutral-400 text-sm">
-                              No match found
-                            </li>
-                          )}
+                          <li className="px-3 py-1 text-neutral-400 text-sm">
+                            No match found
+                          </li>
+                        )}
                       </ul>
                     )}
                   </div>
@@ -1447,6 +1807,7 @@ const AddShipmentModal = ({
                       Gate Closing Date
                     </label>
                     <Input
+
                       type="date"
                       value={form.gateClosingDate || ""}
                       onChange={(e) => setForm({ ...form, gateClosingDate: e.target.value })}
@@ -1466,38 +1827,12 @@ const AddShipmentModal = ({
                   </div>
                   <div>
                     <label className="block text-sm text-neutral-200 mb-1">
-                      Empty Return Depot <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={form.emptyReturnDepot || ""}
-                      onChange={(e) => setForm({ ...form, emptyReturnDepot: e.target.value })}
-                      disabled={!!form.quotationRefNo} // Disable if imported from quotation
-                      className={`w-full p-2 text-white rounded border ${
-                        form.quotationRefNo 
-                          ? 'bg-gray-700 border-gray-600 cursor-not-allowed opacity-75' 
-                          : 'bg-gray-900 border-gray-700'
-                      }`}
-                    >
-                      <option value="">Select Return Depot</option>
-                      {selectOptions.depot.map((d) => (
-                        <option key={d.id} value={d.id}>{d.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm text-neutral-200 mb-1">
-                      Estimated Empty Return Date
+                      ETA to PoD
                     </label>
                     <Input
                       type="date"
-                      value={form.estimatedEmptyReturnDate || ""}
-                      onChange={(e) =>
-                        setForm({
-                          ...form,
-                          estimatedEmptyReturnDate: e.target.value,
-                        })
-                      }
-                      placeholder="DD/MM/YY"
+                      value={form.etaToPod || ""}
+                      onChange={(e) => setForm({ ...form, etaToPod: e.target.value })}
                       className="w-full p-2.5 bg-neutral-800 text-white rounded border border-neutral-700"
                     />
                   </div>
@@ -1505,8 +1840,69 @@ const AddShipmentModal = ({
               </div>
             </div>
 
-            {/* Submit and Cancel buttons */}
-            <DialogFooter className="flex justify-center gap-3 mt-6">
+            {/* Return Depot Information */}
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="text-white text-base font-semibold">
+                  Return Depot Information
+                </h3>
+              </div>
+              <div className="bg-neutral-800 p-4 rounded space-y-4">
+                <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                  {/* Empty Return Depot - Replace with select dropdown */}
+                  <div>
+                    <label className="block text-sm text-neutral-200 mb-1">
+                      Empty Return Depot <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={form.emptyReturnDepot || ""}
+                      onChange={(e) => {
+                        const selectedId = Number(e.target.value);
+                        const selected = emptyReturnDepots.find((d) => d.id === selectedId);
+                        setForm((prev: any) => ({
+                          ...prev,
+                          emptyReturnDepot: selectedId.toString(),
+                          emptyReturnDepotName: selected?.companyName || "",
+                        }));
+                      }}
+                      className="w-full p-2.5 bg-neutral-800 text-white rounded border border-neutral-700"
+                    >
+                      <option value="">
+                        {!form.portOfDischarge ? "First Select Port of Discharge" : "Select Depot"}
+                      </option>
+                      {Array.isArray(emptyReturnDepots) && emptyReturnDepots.length > 0 ? (
+                        emptyReturnDepots.map((depot) => (
+                          <option key={depot.id} value={depot.id}>
+                            {depot.companyName} - {depot.businessType}
+                          </option>
+                        ))
+                      ) : (
+                        form.portOfDischarge && emptyReturnDepots.length === 0 && (
+                          <option value="" disabled>
+                            Loading depots...
+      </option>
+                        )
+                      )}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm text-neutral-200 mb-1">
+                      Estimated Empty Return Date
+                    </label>
+                    <Input
+                      type="date"
+                      value={form.estimatedEmptyReturnDate || ""}
+                      onChange={(e) => setForm({ ...form, estimatedEmptyReturnDate: e.target.value })}
+                      className="w-full p-2.5 bg-neutral-800 text-white rounded border border-neutral-700"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Submit Buttons */}
+            <DialogFooter className="flex justify-end px-6 py-4 border-t border-neutral-800 bg-neutral-900">
               <Button
                 type="button"
                 variant="outline"

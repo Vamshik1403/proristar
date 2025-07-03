@@ -436,7 +436,7 @@ model Quotation {
 
 model Shipment {
   id                              Int       @id @default(autoincrement())
-  quotationRefNumber              String
+  quotationRefNumber              String?
   date                            DateTime
   jobNumber                       String
   refNumber                       String

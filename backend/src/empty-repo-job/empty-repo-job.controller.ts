@@ -27,8 +27,12 @@ export class EmptyRepoJobController {
   }
 
   @Get('job/next')
-  getNextJobNumber() {
-    return this.service.getNextJobNumber();
+  async getNextJobNumber() {
+    const jobNumber = await this.service.getNextJobNumber();
+    return { 
+      jobNumber,
+      houseBL: jobNumber // House BL is same as job number
+    };
   }
 
   @Get(':id')
@@ -45,5 +49,4 @@ export class EmptyRepoJobController {
   remove(@Param('id') id: string) {
     return this.service.remove(+id);
   }
-
 }

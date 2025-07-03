@@ -53,17 +53,28 @@ async create(data: CreateShipmentDto) {
   const generatedJobNumber = await this.getNextJobNumber();
 
   return this.prisma.$transaction(async (tx) => {
+    // Build the data object conditionally
+    const shipmentData: any = {
+      ...data, // This spreads all the other fields
+      houseBL: generatedHouseBL,
+      jobNumber: generatedJobNumber,
+      date: parseDate(data.date),
+      gsDate: parseDate(data.gsDate),
+      sob: parseDate(data.sob),
+      etaTopod: parseDate(data.etaTopod),
+      estimateDate: parseDate(data.estimateDate),
+    };
+
+    // Only include quotationRefNumber if it's provided
+    if (data.quotationRefNumber) {
+      shipmentData.quotationRefNumber = data.quotationRefNumber;
+    }
+
+    // Remove containers from shipmentData as it's handled separately
+    delete shipmentData.containers;
+
     const createdShipment = await tx.shipment.create({
-      data: {
-        ...shipmentData,
-        houseBL: generatedHouseBL,
-        jobNumber: generatedJobNumber,
-        date: parseDate(shipmentData.date),
-        gsDate: parseDate(shipmentData.gsDate),
-        sob: parseDate(shipmentData.sob),
-        etaTopod: parseDate(shipmentData.etaTopod),
-        estimateDate: parseDate(shipmentData.estimateDate),
-      },
+      data: shipmentData,
     });
 
     if (containers && containers.length > 0) {

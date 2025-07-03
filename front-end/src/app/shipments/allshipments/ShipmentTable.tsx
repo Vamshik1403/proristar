@@ -156,7 +156,9 @@ const AllShipmentsPage = () => {
       carrierId: shipment.carrierAddressBookId?.toString() || '',
       carrierAddressBookId: shipment.carrierAddressBookId,
       carrierName: '', // Will be populated by the useEffect in AddShipmentForm
-      productId: shipment.productId?.toString() || '',
+      
+      // FIX: Ensure productId is passed as number, not string
+      productId: shipment.productId || '', // Keep as number/empty string
       productName: '', // Will be populated by the useEffect in AddShipmentForm
 
       // FIX: Port fields - use the actual port IDs for the select components
@@ -443,7 +445,7 @@ const AllShipmentsPage = () => {
                       >
                         <Download size={16} />
                       </Button>
-                    </TableCell>
+                    </TableCell>	
                   </TableRow>
                 ))
             )}

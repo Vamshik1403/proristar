@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsInt, IsString, IsDateString, IsArray, ValidateNested } from 'class-validator';
+import { IsInt, IsString, IsDateString, IsArray, ValidateNested, IsOptional } from 'class-validator';
 
 
 
@@ -24,8 +24,9 @@ class ShipmentContainerDto {
 }
 
 export class CreateShipmentDto {
+  @IsOptional()
   @IsString()
-  quotationRefNumber: string;
+  quotationRefNumber?: string;
 
   @IsDateString()
   date: string;

@@ -16,24 +16,36 @@ const AddQuotationModal = ({
   const [portSuggestions, setPortSuggestions] = useState<any[]>([]);
   const [showPortDropdown, setShowPortDropdown] = useState(false);
   const [showDischargeDropdown, setShowDischargeDropdown] = useState(false);
-  const [expDepots, setExpDepots] = useState<{ id: number; companyName: string }[]>([]);
-  const [emptyReturnDepots, setEmptyReturnDepots] = useState<{ id: number; companyName: string }[]>([]);
-  const [expAgents, setExpAgents] = useState<{ id: number; companyName: string }[]>([]);
-  const [impHandlingAgents, setImpHandlingAgents] = useState<{ id: number; companyName: string }[]>([]);
-  const [transhipmentPortSuggestions, setTranshipmentPortSuggestions] = useState<any[]>([]);
-  const [showTranshipmentDropdown, setShowTranshipmentDropdown] = useState(false);
+  const [expDepots, setExpDepots] = useState<
+    { id: number; companyName: string }[]
+  >([]);
+  const [emptyReturnDepots, setEmptyReturnDepots] = useState<
+    { id: number; companyName: string }[]
+  >([]);
+  const [expAgents, setExpAgents] = useState<
+    { id: number; companyName: string }[]
+  >([]);
+  const [impHandlingAgents, setImpHandlingAgents] = useState<
+    { id: number; companyName: string }[]
+  >([]);
+  const [transhipmentPortSuggestions, setTranshipmentPortSuggestions] =
+    useState<any[]>([]);
+  const [showTranshipmentDropdown, setShowTranshipmentDropdown] =
+    useState(false);
   const [trsHandlingAgents, setTrsHandlingAgents] = useState<any[]>([]);
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Required field validations
     const requiredFields = [
-      { field: 'productId', message: 'Please select a product' },
-      { field: 'customerId', message: 'Please select a customer' },
-      { field: 'portOfLoadingId', message: 'Please select a port of loading' },
-      { field: 'portOfDischargeId', message: 'Please select a port of discharge' }
+      { field: "productId", message: "Please select a product" },
+      { field: "customerId", message: "Please select a customer" },
+      { field: "portOfLoadingId", message: "Please select a port of loading" },
+      {
+        field: "portOfDischargeId",
+        message: "Please select a port of discharge",
+      },
     ];
 
     for (const { field, message } of requiredFields) {
@@ -44,11 +56,12 @@ const AddQuotationModal = ({
     }
 
     // Ensure none of the string fields are null
-    const ensureString = (value: any) => value === null || value === undefined ? '' : value;
+    const ensureString = (value: any) =>
+      value === null || value === undefined ? "" : value;
 
     // Use existing dates for edit mode or set new dates for new records
     let effectiveDate, validTillDate;
-    
+
     if (form.isEditing && form.effectiveDate && form.validTillDate) {
       effectiveDate = new Date(form.effectiveDate).toISOString();
       validTillDate = new Date(form.validTillDate).toISOString();
@@ -65,24 +78,26 @@ const AddQuotationModal = ({
       status: form.status ? "ACTIVE" : "INACTIVE",
       effectiveDate: effectiveDate,
       validTillDate: validTillDate,
-      shippingTerm: form.shippingTerm || '',
+      shippingTerm: form.shippingTerm || "",
       custAddressBookId: Number(form.customerId),
-      billingParty: form.billingParty || '',
-      rateType: form.rateType || '',
-      billingType: form.billingType || '',
+      billingParty: form.billingParty || "",
+      rateType: form.rateType || "",
+      billingType: form.billingType || "",
       productId: Number(form.productId),
       polPortId: Number(form.portOfLoadingId),
       podPortId: Number(form.portOfDischargeId),
-      polFreeDays: form.expFreeDays || '',
-      podFreeDays: form.impFreeDays || '',
-      polDetentionRate: form.expDetentionRate || '',
-      podDetentionRate: form.impDetentionRate || '',
+      polFreeDays: form.expFreeDays || "",
+      podFreeDays: form.impFreeDays || "",
+      polDetentionRate: form.expDetentionRate || "",
+      podDetentionRate: form.impDetentionRate || "",
       expDepotAddressBookId: Number(form.expDepotId),
       emptyReturnAddressBookId: Number(form.emptyReturnDepot),
       expHandlingAgentAddressBookId: Number(form.expHAgentId),
       impHandlingAgentAddressBookId: Number(form.impHAgentId),
-      transitDays: form.transitDays || '',
-      transhipmentPortId: form.enableTranshipmentPort ? Number(form.transhipmentPortId) : null,
+      transitDays: form.transitDays || "",
+      transhipmentPortId: form.enableTranshipmentPort
+        ? Number(form.transhipmentPortId)
+        : null,
       transhipmentHandlingAgentAddressBookId: form.enableTranshipmentPort
         ? Number(form.transhipmentAgentId)
         : null,
@@ -134,8 +149,7 @@ const AddQuotationModal = ({
         const data = await res.json();
         const customers = data.filter(
           (entry: any) =>
-            entry.businessType &&
-            entry.businessType.includes("Customer")
+            entry.businessType && entry.businessType.includes("Customer")
         );
         setCustomerSuggestions(customers);
       } catch (err) {
@@ -179,7 +193,6 @@ const AddQuotationModal = ({
     fetchNextRef();
   }, []);
 
-
   const fetchProducts = async (searchTerm: string) => {
     try {
       const res = await fetch("http://localhost:8000/products");
@@ -208,32 +221,32 @@ const AddQuotationModal = ({
     }
   };
 
-const fetchExpDepotsByPort = async (portId: number) => {
-  try {
-    const res = await fetch("http://localhost:8000/addressbook");
-    const data = await res.json();
-    console.log("Fetched AddressBook:", data);
+  const fetchExpDepotsByPort = async (portId: number) => {
+    try {
+      const res = await fetch("http://localhost:8000/addressbook");
+      const data = await res.json();
+      console.log("Fetched AddressBook:", data);
 
-    const filtered = data.filter((entry: any) => {
-      const businessType = (entry.businessType || "").toLowerCase();
+      const filtered = data.filter((entry: any) => {
+        const businessType = (entry.businessType || "").toLowerCase();
 
-      const isDepotOrCY =
-        businessType.includes("deport terminal") ||
-        businessType.includes("cy terminal");
+        const isDepotOrCY =
+          businessType.includes("deport terminal") ||
+          businessType.includes("cy terminal");
 
-      const linkedToPort =
-        Array.isArray(entry.businessPorts) &&
-        entry.businessPorts.some((bp: any) => bp.portId === portId);
+        const linkedToPort =
+          Array.isArray(entry.businessPorts) &&
+          entry.businessPorts.some((bp: any) => bp.portId === portId);
 
-      return isDepotOrCY && linkedToPort;
-    });
+        return isDepotOrCY && linkedToPort;
+      });
 
-    console.log("Filtered Exp Depots:", filtered);
-    setExpDepots(filtered);
-  } catch (err) {
-    console.error("Failed to fetch Exp. Depots:", err);
-  }
-};
+      console.log("Filtered Exp Depots:", filtered);
+      setExpDepots(filtered);
+    } catch (err) {
+      console.error("Failed to fetch Exp. Depots:", err);
+    }
+  };
 
   useEffect(() => {
     if (form.portOfLoadingId) {
@@ -244,32 +257,30 @@ const fetchExpDepotsByPort = async (portId: number) => {
   }, [form.portOfLoadingId]);
 
   const fetchEmptyReturnDepotsByPort = async (portId: number) => {
-  try {
-    const res = await fetch("http://localhost:8000/addressbook");
-    const data = await res.json();
-    console.log("Fetched address book data:", data); // ✅ check actual data
+    try {
+      const res = await fetch("http://localhost:8000/addressbook");
+      const data = await res.json();
+      console.log("Fetched address book data:", data); // ✅ check actual data
 
-    const filtered = data.filter((entry: any) => {
-      const businessType = (entry.businessType || "").toLowerCase();
-      const isDepotOrCY =
-        businessType.includes("deport terminal") || businessType.includes("cy terminal");
+      const filtered = data.filter((entry: any) => {
+        const businessType = (entry.businessType || "").toLowerCase();
+        const isDepotOrCY =
+          businessType.includes("deport terminal") ||
+          businessType.includes("cy terminal");
 
-      const linkedToPort =
-        Array.isArray(entry.businessPorts) &&
-        entry.businessPorts.some((bp: any) => bp.portId === portId);
+        const linkedToPort =
+          Array.isArray(entry.businessPorts) &&
+          entry.businessPorts.some((bp: any) => bp.portId === portId);
 
-      return isDepotOrCY && linkedToPort;
-    });
+        return isDepotOrCY && linkedToPort;
+      });
 
-    console.log("Filtered Depots:", filtered); // ✅ check final result
-    setEmptyReturnDepots(filtered);
-  } catch (err) {
-    console.error("Failed to fetch empty return depots:", err);
-  }
-};
-
-
-
+      console.log("Filtered Depots:", filtered); // ✅ check final result
+      setEmptyReturnDepots(filtered);
+    } catch (err) {
+      console.error("Failed to fetch empty return depots:", err);
+    }
+  };
 
   useEffect(() => {
     if (form.portOfDischargeId) {
@@ -386,10 +397,11 @@ const fetchExpDepotsByPort = async (portId: number) => {
       const res = await fetch("http://localhost:8000/container-lease-tariff");
       const data = await res.json();
 
-      const matchedTariff = data.find((t: any) =>
-        t.containerCategory === product.containerCategory &&
-        t.containerType === product.containerType &&
-        t.containerClass === product.classType
+      const matchedTariff = data.find(
+        (t: any) =>
+          t.containerCategory === product.containerCategory &&
+          t.containerType === product.containerType &&
+          t.containerClass === product.classType
       );
 
       if (!matchedTariff) {
@@ -415,7 +427,7 @@ const fetchExpDepotsByPort = async (portId: number) => {
     }
   };
 
-   useEffect(() => {
+  useEffect(() => {
     const parse = (val: string) => parseFloat(val) || 0;
 
     const totalCost =
@@ -434,7 +446,7 @@ const fetchExpDepotsByPort = async (portId: number) => {
 
     const totalRevenue = selling + expCollection + impCollection;
     const totalPL = selling - totalCost;
-    const plMargin = selling ? ((totalPL / selling) * 100).toFixed(2) : '0';
+    const plMargin = selling ? ((totalPL / selling) * 100).toFixed(2) : "0";
 
     setForm((prev: any) => ({
       ...prev,
@@ -457,8 +469,6 @@ const fetchExpDepotsByPort = async (portId: number) => {
     form.impCollection,
   ]);
 
-
-
   useEffect(() => {
     const recalcIfApplicable = async () => {
       if (
@@ -480,10 +490,7 @@ const fetchExpDepotsByPort = async (portId: number) => {
 
   useEffect(() => {
     setForm((prev: any) => ({ ...prev, leasingCost: "" }));
-  
   }, [form.productId]);
-
-
 
   useEffect(() => {
     const { productId, portOfDischargeId, emptyReturnDepot } = form;
@@ -497,132 +504,130 @@ const fetchExpDepotsByPort = async (portId: number) => {
       return;
     }
 
+    const calculateDepotCleaningCost = async () => {
+      const { productId, portOfDischargeId, emptyReturnDepot } = form;
 
-  const calculateDepotCleaningCost = async () => {
-    const { productId, portOfDischargeId, emptyReturnDepot } = form;
+      if (!productId || !portOfDischargeId || !emptyReturnDepot) return;
 
-    if (!productId || !portOfDischargeId || !emptyReturnDepot) return;
+      try {
+        const [res, exchangeRes] = await Promise.all([
+          fetch("http://localhost:8000/depot-cleaning-tariff-cost"),
+          fetch("http://localhost:8000/exchange-rates"),
+        ]);
 
-    try {
-      const [res, exchangeRes] = await Promise.all([
-        fetch("http://localhost:8000/depot-cleaning-tariff-cost"),
-        fetch("http://localhost:8000/exchange-rates"),
-      ]);
+        const [data, exchangeRateData] = await Promise.all([
+          res.json(),
+          exchangeRes.json(),
+        ]);
 
-      const [data, exchangeRateData] = await Promise.all([
-        res.json(),
-        exchangeRes.json(),
-      ]);
-
-      const matched = data.find((item: any) =>
-        Number(item.productId) === Number(productId) &&
-        Number(item.portId) === Number(portOfDischargeId) &&
-        Number(item.addressBookId) === Number(emptyReturnDepot)
-      );
-
-      if (matched) {
-        const total = parseFloat(matched.cleaningCharges || "0");
-        const currencyId = matched.currencyId;
-
-        const exchange = exchangeRateData.find(
-          (rate: any) => Number(rate.fromCurrencyId) === Number(currencyId)
+        const matched = data.find(
+          (item: any) =>
+            Number(item.productId) === Number(productId) &&
+            Number(item.portId) === Number(portOfDischargeId) &&
+            Number(item.addressBookId) === Number(emptyReturnDepot)
         );
 
-        const rate = exchange ? parseFloat(exchange.exchangeRate || "1") : 1;
-        const variance = exchange ? parseFloat(exchange.variance || "0") : 0;
-        const adjustedRate = rate + (rate * variance / 100);
+        if (matched) {
+          const total = parseFloat(matched.cleaningCharges || "0");
+          const currencyId = matched.currencyId;
 
-        const finalCleaningCost = total * adjustedRate;
+          const exchange = exchangeRateData.find(
+            (rate: any) => Number(rate.fromCurrencyId) === Number(currencyId)
+          );
 
-        setForm((prev: any) => ({
-          ...prev,
-          depotCleaningCost: finalCleaningCost.toFixed(2),
-        }));
-      } else {
+          const rate = exchange ? parseFloat(exchange.exchangeRate || "1") : 1;
+          const variance = exchange ? parseFloat(exchange.variance || "0") : 0;
+          const adjustedRate = rate + (rate * variance) / 100;
+
+          const finalCleaningCost = total * adjustedRate;
+
+          setForm((prev: any) => ({
+            ...prev,
+            depotCleaningCost: finalCleaningCost.toFixed(2),
+          }));
+        } else {
+          setForm((prev: any) => ({
+            ...prev,
+            depotCleaningCost: "",
+          }));
+          console.warn("No depot cleaning cost matched.");
+        }
+      } catch (err) {
+        console.error("Error fetching depot cleaning cost:", err);
         setForm((prev: any) => ({
           ...prev,
           depotCleaningCost: "",
         }));
-        console.warn("No depot cleaning cost matched.");
       }
-    } catch (err) {
-      console.error("Error fetching depot cleaning cost:", err);
-      setForm((prev: any) => ({
-        ...prev,
-        depotCleaningCost: "",
-      }));
-    }
-  };
+    };
 
-  calculateDepotCleaningCost();
-}, [form.productId, form.portOfDischargeId, form.emptyReturnDepot]);
+    calculateDepotCleaningCost();
+  }, [form.productId, form.portOfDischargeId, form.emptyReturnDepot]);
 
+  useEffect(() => {
+    const fetchDepotAvgTariff = async () => {
+      try {
+        const [tariffRes, currencyRes, exchangeRateRes] = await Promise.all([
+          fetch("http://localhost:8000/depot-avg-tariff"),
+          fetch("http://localhost:8000/currency"),
+          fetch("http://localhost:8000/exchange-rates"),
+        ]);
 
-useEffect(() => {
-  const fetchDepotAvgTariff = async () => {
-    try {
-      const [tariffRes, currencyRes, exchangeRateRes] = await Promise.all([
-        fetch("http://localhost:8000/depot-avg-tariff"),
-        fetch("http://localhost:8000/currency"),
-        fetch("http://localhost:8000/exchange-rates"),
-      ]);
+        const [tariffData, currencyData, exchangeRateData] = await Promise.all([
+          tariffRes.json(),
+          currencyRes.json(),
+          exchangeRateRes.json(),
+        ]);
 
-      const [tariffData, currencyData, exchangeRateData] = await Promise.all([
-        tariffRes.json(),
-        currencyRes.json(),
-        exchangeRateRes.json(),
-      ]);
+        const getAdjustedTotal = (portId: number, depotId: number) => {
+          const match = tariffData.find(
+            (item: any) =>
+              Number(item.portId) === Number(portId) &&
+              Number(item.addressBookId) === Number(depotId)
+          );
 
-      const getAdjustedTotal = (portId: number, depotId: number) => {
-        const match = tariffData.find(
-          (item: any) =>
-            Number(item.portId) === Number(portId) &&
-            Number(item.addressBookId) === Number(depotId)
+          if (!match) return 0;
+
+          const total = parseFloat(match.total || "0");
+          const currencyId = match.currencyId;
+
+          const exchange = exchangeRateData.find(
+            (rate: any) => Number(rate.fromCurrencyId) === Number(currencyId)
+          );
+
+          if (!exchange) return total;
+
+          const rate = parseFloat(exchange.exchangeRate || "1");
+          const variance = parseFloat(exchange.variance || "0");
+          const adjustedRate = rate + (rate * variance) / 100;
+
+          return total * adjustedRate;
+        };
+
+        // Guard clause to prevent running with incomplete data
+        if (!form.portOfDischargeId || !form.emptyReturnDepot) return;
+
+        // Only use POD (port of discharge) and its depot
+        const total2 = getAdjustedTotal(
+          form.portOfDischargeId,
+          form.emptyReturnDepot
         );
 
-        if (!match) return 0;
+        setForm((prev: any) => ({
+          ...prev,
+          depotAvgCost: total2.toFixed(2),
+        }));
+      } catch (err) {
+        console.error("Failed to fetch depot avg tariff:", err);
+        setForm((prev: any) => ({
+          ...prev,
+          depotAvgCost: "",
+        }));
+      }
+    };
 
-        const total = parseFloat(match.total || "0");
-        const currencyId = match.currencyId;
-
-        const exchange = exchangeRateData.find(
-          (rate: any) => Number(rate.fromCurrencyId) === Number(currencyId)
-        );
-
-        if (!exchange) return total;
-
-        const rate = parseFloat(exchange.exchangeRate || "1");
-        const variance = parseFloat(exchange.variance || "0");
-        const adjustedRate = rate + (rate * variance / 100);
-
-        return total * adjustedRate;
-      };
-
-      // Guard clause to prevent running with incomplete data
-      if (!form.portOfDischargeId || !form.emptyReturnDepot) return;
-
-      // Only use POD (port of discharge) and its depot
-      const total2 = getAdjustedTotal(form.portOfDischargeId, form.emptyReturnDepot);
-
-      setForm((prev: any) => ({
-        ...prev,
-        depotAvgCost: total2.toFixed(2),
-      }));
-    } catch (err) {
-      console.error("Failed to fetch depot avg tariff:", err);
-      setForm((prev: any) => ({
-        ...prev,
-        depotAvgCost: "",
-      }));
-    }
-  };
-
-  fetchDepotAvgTariff(); // ✅ Now it's inside useEffect
-}, [
-  form.portOfDischargeId,
-  form.emptyReturnDepot,
-]);
-
+    fetchDepotAvgTariff(); // ✅ Now it's inside useEffect
+  }, [form.portOfDischargeId, form.emptyReturnDepot]);
 
   useEffect(() => {
     // Special handling for edit mode to load all dependent data
@@ -630,179 +635,177 @@ useEffect(() => {
       // Load customer suggestions
       if (form.customerId) {
         fetch("http://localhost:8000/addressbook")
-          .then(res => res.json())
-          .then(data => {
+          .then((res) => res.json())
+          .then((data) => {
             const customers = data.filter(
-              (entry: any) => entry.businessType && entry.businessType.includes("Customer")
+              (entry: any) =>
+                entry.businessType && entry.businessType.includes("Customer")
             );
             setCustomerSuggestions(customers);
           });
       }
-      
+
       // Load product data
       if (form.productId) {
-        fetchProducts(form.productName || '');
+        fetchProducts(form.productName || "");
       }
-      
+
       // Load port data and related entities
       if (form.portOfLoadingId) {
-        fetchPorts(form.portOfLoading || '');
+        fetchPorts(form.portOfLoading || "");
         fetchExpDepotsByPort(Number(form.portOfLoadingId));
         fetchExpHandlingAgentsByPort(Number(form.portOfLoadingId));
       }
-      
+
       if (form.portOfDischargeId) {
-        fetchPorts(form.portOfDischarge || '');
+        fetchPorts(form.portOfDischarge || "");
         fetchEmptyReturnDepotsByPort(Number(form.portOfDischargeId));
         fetchImpHandlingAgentsByPort(Number(form.portOfDischargeId));
       }
-      
+
       // Load transhipment data if applicable
       if (form.enableTranshipmentPort && form.transhipmentPortId) {
-        fetchTranshipmentPorts(form.transhipmentPortName || '');
+        fetchTranshipmentPorts(form.transhipmentPortName || "");
         fetchTrsHandlingAgents(Number(form.transhipmentPortId));
       }
 
-       if (form.product) {
-      calculateLeasingCost(form.product);
-    }
-    
+      if (form.product) {
+        calculateLeasingCost(form.product);
+      }
     }
   }, [form.isEditing]); // Only run when isEditing changes
 
   useEffect(() => {
-  const fetchExpAgencyCommission = async () => {
-    const portId = form.portOfLoadingId;
-    const addressBookId = form.expHAgentId;
+    const fetchExpAgencyCommission = async () => {
+      const portId = form.portOfLoadingId;
+      const addressBookId = form.expHAgentId;
 
-    if (!portId || !addressBookId) {
-      setForm((prev: any) => ({
-        ...prev,
-        expAgencyCommission: "",
-      }));
-      return;
-    }
-
-    try {
-      const [res, exchangeRes] = await Promise.all([
-        fetch("http://localhost:8000/handling-agent-tariff-cost"),
-        fetch("http://localhost:8000/exchange-rates"),
-      ]);
-
-      const [data, exchangeRateData] = await Promise.all([
-        res.json(),
-        exchangeRes.json(),
-      ]);
-
-      const matched = data.find(
-        (item: any) =>
-          Number(item.portId) === Number(portId) &&
-          Number(item.addressBookId) === Number(addressBookId)
-      );
-
-      if (matched && matched.expCommission) {
-        const total = parseFloat(matched.expCommission || "0");
-        const currencyId = matched.currencyId;
-
-        const exchange = exchangeRateData.find(
-          (rate: any) => Number(rate.fromCurrencyId) === Number(currencyId)
-        );
-
-        const rate = exchange ? parseFloat(exchange.exchangeRate || "1") : 1;
-        const variance = exchange ? parseFloat(exchange.variance || "0") : 0;
-        const adjustedRate = rate + (rate * variance / 100);
-
-        const finalCommission = total * adjustedRate;
-
+      if (!portId || !addressBookId) {
         setForm((prev: any) => ({
           ...prev,
-          expAgencyCommission: finalCommission.toFixed(2),
+          expAgencyCommission: "",
         }));
-      } else {
+        return;
+      }
+
+      try {
+        const [res, exchangeRes] = await Promise.all([
+          fetch("http://localhost:8000/handling-agent-tariff-cost"),
+          fetch("http://localhost:8000/exchange-rates"),
+        ]);
+
+        const [data, exchangeRateData] = await Promise.all([
+          res.json(),
+          exchangeRes.json(),
+        ]);
+
+        const matched = data.find(
+          (item: any) =>
+            Number(item.portId) === Number(portId) &&
+            Number(item.addressBookId) === Number(addressBookId)
+        );
+
+        if (matched && matched.expCommission) {
+          const total = parseFloat(matched.expCommission || "0");
+          const currencyId = matched.currencyId;
+
+          const exchange = exchangeRateData.find(
+            (rate: any) => Number(rate.fromCurrencyId) === Number(currencyId)
+          );
+
+          const rate = exchange ? parseFloat(exchange.exchangeRate || "1") : 1;
+          const variance = exchange ? parseFloat(exchange.variance || "0") : 0;
+          const adjustedRate = rate + (rate * variance) / 100;
+
+          const finalCommission = total * adjustedRate;
+
+          setForm((prev: any) => ({
+            ...prev,
+            expAgencyCommission: finalCommission.toFixed(2),
+          }));
+        } else {
+          setForm((prev: any) => ({
+            ...prev,
+            expAgencyCommission: "",
+          }));
+        }
+      } catch (error) {
+        console.error("Failed to fetch exp commission:", error);
         setForm((prev: any) => ({
           ...prev,
           expAgencyCommission: "",
         }));
       }
-    } catch (error) {
-      console.error("Failed to fetch exp commission:", error);
-      setForm((prev: any) => ({
-        ...prev,
-        expAgencyCommission: "",
-      }));
-    }
-  };
+    };
 
-  fetchExpAgencyCommission();
-}, [form.portOfLoadingId, form.expHAgentId]);
+    fetchExpAgencyCommission();
+  }, [form.portOfLoadingId, form.expHAgentId]);
 
+  useEffect(() => {
+    const fetchImpAgencyCommission = async () => {
+      const portId = form.portOfDischargeId;
+      const addressBookId = form.impHAgentId;
 
-useEffect(() => {
-  const fetchImpAgencyCommission = async () => {
-    const portId = form.portOfDischargeId;
-    const addressBookId = form.impHAgentId;
-
-    if (!portId || !addressBookId) {
-      setForm((prev: any) => ({
-        ...prev,
-        impAgencyCommission: "",
-      }));
-      return;
-    }
-
-    try {
-      const [res, exchangeRes] = await Promise.all([
-        fetch("http://localhost:8000/handling-agent-tariff-cost"),
-        fetch("http://localhost:8000/exchange-rates"),
-      ]);
-
-      const [data, exchangeRateData] = await Promise.all([
-        res.json(),
-        exchangeRes.json(),
-      ]);
-
-      const matched = data.find(
-        (item: any) =>
-          Number(item.portId) === Number(portId) &&
-          Number(item.addressBookId) === Number(addressBookId)
-      );
-
-      if (matched && matched.impCommission) {
-        const total = parseFloat(matched.impCommission || "0");
-        const currencyId = matched.currencyId;
-
-        const exchange = exchangeRateData.find(
-          (rate: any) => Number(rate.fromCurrencyId) === Number(currencyId)
-        );
-
-        const rate = exchange ? parseFloat(exchange.exchangeRate || "1") : 1;
-        const variance = exchange ? parseFloat(exchange.variance || "0") : 0;
-        const adjustedRate = rate + (rate * variance / 100);
-
-        const finalCommission = total * adjustedRate;
-
+      if (!portId || !addressBookId) {
         setForm((prev: any) => ({
           ...prev,
-          impAgencyCommission: finalCommission.toFixed(2),
+          impAgencyCommission: "",
         }));
-      } else {
+        return;
+      }
+
+      try {
+        const [res, exchangeRes] = await Promise.all([
+          fetch("http://localhost:8000/handling-agent-tariff-cost"),
+          fetch("http://localhost:8000/exchange-rates"),
+        ]);
+
+        const [data, exchangeRateData] = await Promise.all([
+          res.json(),
+          exchangeRes.json(),
+        ]);
+
+        const matched = data.find(
+          (item: any) =>
+            Number(item.portId) === Number(portId) &&
+            Number(item.addressBookId) === Number(addressBookId)
+        );
+
+        if (matched && matched.impCommission) {
+          const total = parseFloat(matched.impCommission || "0");
+          const currencyId = matched.currencyId;
+
+          const exchange = exchangeRateData.find(
+            (rate: any) => Number(rate.fromCurrencyId) === Number(currencyId)
+          );
+
+          const rate = exchange ? parseFloat(exchange.exchangeRate || "1") : 1;
+          const variance = exchange ? parseFloat(exchange.variance || "0") : 0;
+          const adjustedRate = rate + (rate * variance) / 100;
+
+          const finalCommission = total * adjustedRate;
+
+          setForm((prev: any) => ({
+            ...prev,
+            impAgencyCommission: finalCommission.toFixed(2),
+          }));
+        } else {
+          setForm((prev: any) => ({
+            ...prev,
+            impAgencyCommission: "",
+          }));
+        }
+      } catch (error) {
+        console.error("Failed to fetch imp commission:", error);
         setForm((prev: any) => ({
           ...prev,
           impAgencyCommission: "",
         }));
       }
-    } catch (error) {
-      console.error("Failed to fetch imp commission:", error);
-      setForm((prev: any) => ({
-        ...prev,
-        impAgencyCommission: "",
-      }));
-    }
-  };
+    };
 
-  fetchImpAgencyCommission();
-}, [form.portOfDischargeId, form.impHAgentId]);
-
+    fetchImpAgencyCommission();
+  }, [form.portOfDischargeId, form.impHAgentId]);
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 backdrop-blur-sm">
@@ -951,10 +954,14 @@ useEffect(() => {
                       </li>
                     ))}
                   {customerSuggestions.filter((c) =>
-                    c.companyName.toLowerCase().includes(form.customerName?.toLowerCase())
+                    c.companyName
+                      .toLowerCase()
+                      .includes(form.customerName?.toLowerCase())
                   ).length === 0 && (
-                      <li className="px-3 py-1 text-gray-400 text-sm">No match found</li>
-                    )}
+                    <li className="px-3 py-1 text-gray-400 text-sm">
+                      No match found
+                    </li>
+                  )}
                 </ul>
               )}
             </div>
@@ -1013,7 +1020,9 @@ useEffect(() => {
 
             {/* Product Name */}
             <div className="relative">
-              <label className="block text-sm text-gray-400 mb-1">Product Name</label>
+              <label className="block text-sm text-gray-400 mb-1">
+                Product Name
+              </label>
               <input
                 type="text"
                 value={form.productName || ""}
@@ -1047,62 +1056,73 @@ useEffect(() => {
               />
 
               {showProductDropdown && productSuggestions.length > 0 && (
-             <ul className="absolute z-10 w-full bg-neutral-900 border border-neutral-800 rounded mt-1 max-h-40 overflow-y-auto">
-  {productSuggestions.map((product) => (
-    <li
-      key={product.id}
-      onMouseDown={async () => {
-        const updatedForm = {
-          ...form,
-  productName: `${product.productId} - ${product.productName} - ${product.productType}`,
-          productId: product.id,
-          productCategory: product.containerCategory,
-          productType: product.containerType,
-          productClass: product.classType,
-        };
+                <ul className="absolute z-10 w-full bg-neutral-900 border border-neutral-800 rounded mt-1 max-h-40 overflow-y-auto">
+                  {productSuggestions.map((product) => (
+                    <li
+                      key={product.id}
+                      onMouseDown={async () => {
+                        const updatedForm = {
+                          ...form,
+                          productName: `${product.productId} - ${product.productName} - ${product.productType}`,
+                          productId: product.id,
+                          productCategory: product.containerCategory,
+                          productType: product.containerType,
+                          productClass: product.classType,
+                        };
 
-        setForm(updatedForm);
-        setShowProductDropdown(false);
+                        setForm(updatedForm);
+                        setShowProductDropdown(false);
 
-        try {
-          const res = await fetch("http://localhost:8000/container-lease-tariff");
-          const leaseTariffs = await res.json();
+                        try {
+                          const res = await fetch(
+                            "http://localhost:8000/container-lease-tariff"
+                          );
+                          const leaseTariffs = await res.json();
 
-          const matchedLease = leaseTariffs.find(
-            (lease: any) =>
-              lease.containerCategory === product.containerCategory &&
-              lease.containerType === product.containerType &&
-              lease.containerClass === product.classType
-          );
+                          const matchedLease = leaseTariffs.find(
+                            (lease: any) =>
+                              lease.containerCategory ===
+                                product.containerCategory &&
+                              lease.containerType === product.containerType &&
+                              lease.containerClass === product.classType
+                          );
 
-          if (matchedLease) {
-            const exp = parseInt(form.expFreeDays || "0", 10);
-            const imp = parseInt(form.impFreeDays || "0", 10);
-            const transit = parseInt(form.transitDays || "0", 10);
-            const rent = parseFloat(matchedLease.leaseRentPerDay || "0");
+                          if (matchedLease) {
+                            const exp = parseInt(form.expFreeDays || "0", 10);
+                            const imp = parseInt(form.impFreeDays || "0", 10);
+                            const transit = parseInt(
+                              form.transitDays || "0",
+                              10
+                            );
+                            const rent = parseFloat(
+                              matchedLease.leaseRentPerDay || "0"
+                            );
 
-            const leasingCost = (exp + imp + transit) * rent;
+                            const leasingCost = (exp + imp + transit) * rent;
 
-            setForm((prev: any) => ({
-              ...prev,
-              leasingCost: leasingCost.toFixed(2),
-            }));
-          } else {
-            setForm((prev: any) => ({
-              ...prev,
-              leasingCost: "",
-            }));
-          }
-        } catch (error) {
-          console.error("Failed to fetch container lease tariff:", error);
-        }
-      }}
-      className="px-3 py-1 hover:bg-neutral-800 cursor-pointer text-sm text-white"
-    >
-                     {`${product.productId} - ${product.productName} - ${product.productType}`}
-    </li>
-  ))}
-</ul>
+                            setForm((prev: any) => ({
+                              ...prev,
+                              leasingCost: leasingCost.toFixed(2),
+                            }));
+                          } else {
+                            setForm((prev: any) => ({
+                              ...prev,
+                              leasingCost: "",
+                            }));
+                          }
+                        } catch (error) {
+                          console.error(
+                            "Failed to fetch container lease tariff:",
+                            error
+                          );
+                        }
+                      }}
+                      className="px-3 py-1 hover:bg-neutral-800 cursor-pointer text-sm text-white"
+                    >
+                      {`${product.productId} - ${product.productName} - ${product.productType}`}
+                    </li>
+                  ))}
+                </ul>
               )}
             </div>
 
@@ -1142,7 +1162,8 @@ useEffect(() => {
                   setTimeout(() => setShowPortDropdown(false), 100);
                 }}
                 className="w-full p-2 bg-neutral-900 text-white rounded border border-neutral-800"
-                placeholder="Start typing port of loading..." />
+                placeholder="Start typing port of loading..."
+              />
 
               {showPortDropdown && portSuggestions.length > 0 && (
                 <ul className="absolute z-10 w-full bg-neutral-900 border text-white border-neutral-800 rounded mt-1 max-h-40 overflow-y-auto">
@@ -1285,61 +1306,62 @@ useEffect(() => {
 
             {/* Exp. Depot Name */}
             <div>
-  <label className="block text-sm text-gray-400 mb-1">
-    Exp. Depot Name
-  </label>
-  <select
-    value={form.expDepotId || ""}
-    onChange={(e) => {
-      const selectedId = Number(e.target.value);
-      const selectedDepot = expDepots.find((d: any) => d.id === selectedId);
-      setForm({
-        ...form,
-        expDepotId: selectedId,
-        expDepotName: selectedDepot?.companyName || "",
-      });
-    }}
-    className="w-full p-2 bg-neutral-900 text-white rounded border border-neutral-800"
-  >
-    <option value="">First Select Port of Loading</option>
-    {expDepots.map((depot: any) => (
-      <option key={depot.id} value={depot.id}>
-        {depot.companyName} - {depot.businessType}
-      </option>
-    ))}
-  </select>
-</div>
-
+              <label className="block text-sm text-gray-400 mb-1">
+                Exp. Depot Name
+              </label>
+              <select
+                value={form.expDepotId || ""}
+                onChange={(e) => {
+                  const selectedId = Number(e.target.value);
+                  const selectedDepot = expDepots.find(
+                    (d: any) => d.id === selectedId
+                  );
+                  setForm({
+                    ...form,
+                    expDepotId: selectedId,
+                    expDepotName: selectedDepot?.companyName || "",
+                  });
+                }}
+                className="w-full p-2 bg-neutral-900 text-white rounded border border-neutral-800"
+              >
+                <option value="">First Select Port of Loading</option>
+                {expDepots.map((depot: any) => (
+                  <option key={depot.id} value={depot.id}>
+                    {depot.companyName} - {depot.businessType}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             {/* Empty Return Depot */}
-           <div>
-  <label className="block text-sm text-gray-400 mb-1">
-    Empty Return Depot
-  </label>
+            <div>
+              <label className="block text-sm text-gray-400 mb-1">
+                Empty Return Depot
+              </label>
 
-  <select
-    value={form.emptyReturnDepot || ""}
-    onChange={(e) => {
-      const selectedId = Number(e.target.value);
-      const selectedDepot = emptyReturnDepots.find((d) => d.id === selectedId);
-      setForm({
-        ...form,
-        emptyReturnDepot: selectedId,
-        emptyReturnDepotName: selectedDepot?.companyName || "",
-      });
-    }}
-    className="w-full p-2 bg-neutral-900 text-white rounded border border-neutral-800"
-  >
-    <option value="">First Select Port of Discharge</option>
-    {emptyReturnDepots.map((depot: any) => (
-      <option key={depot.id} value={depot.id}>
-        {depot.companyName} - {depot.businessType}
-      </option>
-    ))}
-  </select>
-</div>
-
-
+              <select
+                value={form.emptyReturnDepot || ""}
+                onChange={(e) => {
+                  const selectedId = Number(e.target.value);
+                  const selectedDepot = emptyReturnDepots.find(
+                    (d) => d.id === selectedId
+                  );
+                  setForm({
+                    ...form,
+                    emptyReturnDepot: selectedId,
+                    emptyReturnDepotName: selectedDepot?.companyName || "",
+                  });
+                }}
+                className="w-full p-2 bg-neutral-900 text-white rounded border border-neutral-800"
+              >
+                <option value="">First Select Port of Discharge</option>
+                {emptyReturnDepots.map((depot: any) => (
+                  <option key={depot.id} value={depot.id}>
+                    {depot.companyName} - {depot.businessType}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             {/* Exp. H. Agent Name */}
             <div>
@@ -1350,7 +1372,9 @@ useEffect(() => {
                 value={form.expHAgentId || ""}
                 onChange={(e) => {
                   const selectedId = Number(e.target.value);
-                  const selected = expAgents.find((a: any) => a.id === selectedId);
+                  const selected = expAgents.find(
+                    (a: any) => a.id === selectedId
+                  );
                   setForm({
                     ...form,
                     expHAgentId: selectedId,
@@ -1366,9 +1390,7 @@ useEffect(() => {
                   </option>
                 ))}
               </select>
-
             </div>
-
 
             {/* Imp. H. Agent Name */}
             <div>
@@ -1379,7 +1401,9 @@ useEffect(() => {
                 value={form.impHAgentId || ""}
                 onChange={(e) => {
                   const selectedId = Number(e.target.value);
-                  const selected = impHandlingAgents.find((a: any) => a.id === selectedId);
+                  const selected = impHandlingAgents.find(
+                    (a: any) => a.id === selectedId
+                  );
                   setForm({
                     ...form,
                     impHAgentId: selectedId,
@@ -1388,7 +1412,6 @@ useEffect(() => {
                 }}
                 className="w-full p-2 bg-neutral-900 text-white rounded border border-neutral-800"
               >
-                
                 <option value="">Select</option>
                 {impHandlingAgents.map((agent: any) => (
                   <option key={agent.id} value={agent.id}>
@@ -1396,7 +1419,6 @@ useEffect(() => {
                   </option>
                 ))}
               </select>
-
             </div>
 
             <hr className="border-t border-gray-600 my-4 col-span-2" />
@@ -1464,34 +1486,42 @@ useEffect(() => {
                       }}
                       onFocus={() => {
                         if ((form.transhipmentPortName || "").length > 1) {
-                          fetchTranshipmentPorts(form.transhipmentPortName || "");
+                          fetchTranshipmentPorts(
+                            form.transhipmentPortName || ""
+                          );
                           setShowTranshipmentDropdown(true);
                         }
                       }}
-                      onBlur={() => setTimeout(() => setShowTranshipmentDropdown(false), 150)}
+                      onBlur={() =>
+                        setTimeout(
+                          () => setShowTranshipmentDropdown(false),
+                          150
+                        )
+                      }
                       className="w-full p-2 bg-neutral-900 text-white rounded border border-neutral-800"
                       placeholder="Start typing transhipment port..."
                     />
-                    {showTranshipmentDropdown && transhipmentPortSuggestions.length > 0 && (
-                      <ul className="absolute z-10 w-full bg-neutral-900 border text-white border-neutral-800 rounded mt-1 max-h-40 overflow-y-auto">
-                        {transhipmentPortSuggestions.map((port) => (
-                          <li
-                            key={port.id}
-                            onMouseDown={() => {
-                              setForm((prev: any) => ({
-                                ...prev,
-                                transhipmentPortName: port.portName,
-                                transhipmentPortId: port.id,
-                              }));
-                              setShowTranshipmentDropdown(false);
-                            }}
-                            className="px-3 py-1 hover:bg-neutral-800 cursor-pointer text-sm text-white"
-                          >
-                            {port.portName}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
+                    {showTranshipmentDropdown &&
+                      transhipmentPortSuggestions.length > 0 && (
+                        <ul className="absolute z-10 w-full bg-neutral-900 border text-white border-neutral-800 rounded mt-1 max-h-40 overflow-y-auto">
+                          {transhipmentPortSuggestions.map((port) => (
+                            <li
+                              key={port.id}
+                              onMouseDown={() => {
+                                setForm((prev: any) => ({
+                                  ...prev,
+                                  transhipmentPortName: port.portName,
+                                  transhipmentPortId: port.id,
+                                }));
+                                setShowTranshipmentDropdown(false);
+                              }}
+                              className="px-3 py-1 hover:bg-neutral-800 cursor-pointer text-sm text-white"
+                            >
+                              {port.portName}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                   </div>
                 </div>
 
@@ -1505,7 +1535,9 @@ useEffect(() => {
                       value={form.transhipmentAgentId || ""}
                       onChange={(e) => {
                         const selectedId = Number(e.target.value);
-                        const selected = trsHandlingAgents.find(a => a.id === selectedId);
+                        const selected = trsHandlingAgents.find(
+                          (a) => a.id === selectedId
+                        );
                         setForm({
                           ...form,
                           transhipmentAgentId: selectedId,
@@ -1523,7 +1555,6 @@ useEffect(() => {
                     </select>
                   </div>
                 </div>
-
               </>
             )}
 
@@ -1538,7 +1569,7 @@ useEffect(() => {
                 type="text"
                 value={form.slotRate ?? ""}
                 onChange={(e) => setForm({ ...form, slotRate: e.target.value })}
-                      className="w-full p-2 bg-neutral-900 text-white rounded border border-neutral-800"
+                className="w-full p-2 bg-neutral-900 text-white rounded border border-neutral-800"
               />
             </div>
 
@@ -1550,11 +1581,10 @@ useEffect(() => {
                 type="text"
                 value={form.depotAvgCost ?? ""}
                 readOnly
-                      className="w-full p-2 bg-neutral-900 text-white rounded border border-neutral-800"
+                className="w-full p-2 bg-neutral-900 text-white rounded border border-neutral-800"
                 placeholder={form.isEditing ? "" : "Auto-calculated"}
               />
             </div>
-
 
             <div>
               <label className="block text-sm text-gray-400 mb-1">
@@ -1569,7 +1599,6 @@ useEffect(() => {
               />
             </div>
 
-
             <div>
               <label className="block text-sm text-gray-400 mb-1">
                 Depot Cleaning Cost
@@ -1577,7 +1606,9 @@ useEffect(() => {
               <input
                 type="text"
                 value={form.depotCleaningCost ?? ""}
-                onChange={(e) => setForm({ ...form, depotCleaningCost: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, depotCleaningCost: e.target.value })
+                }
                 className="w-full p-2 bg-neutral-900 text-white rounded border border-neutral-800"
                 placeholder={form.isEditing ? "" : "Auto-calculated"}
                 readOnly
@@ -1612,8 +1643,6 @@ useEffect(() => {
             </div>
 
             <hr className="border-t border-gray-600 my-4 col-span-2" />
-
-
 
             <div>
               <label className="block text-sm text-gray-400 mb-1">
@@ -1658,7 +1687,6 @@ useEffect(() => {
                   setForm({ ...form, expCollection: e.target.value })
                 }
                 className="w-full p-2 bg-neutral-900 text-white rounded border border-neutral-800"
-
               />
             </div>
 
@@ -1678,7 +1706,7 @@ useEffect(() => {
 
             <hr className="border-t border-gray-600 my-4 col-span-2" />
 
-<div className="space-y-4">
+            <div className="space-y-4">
               {" "}
               {/* Ensures vertical stacking with spacing */}
               <div>
@@ -1692,8 +1720,6 @@ useEffect(() => {
                   className="w-full p-2 bg-gray-800 text-white rounded border border-gray-700"
                 />
               </div>
-
-
               <div>
                 <label className="block text-sm text-gray-400 mb-1">
                   Selling Amount (Ocean Freight)
@@ -1708,29 +1734,27 @@ useEffect(() => {
                 />
               </div>
               <div>
-  <label className="block text-sm text-gray-400 mb-1">
-    Total Revenue Amount
-  </label>
-  <input
-    type="text"
-    value={form.totalRevenueAmount ?? ""}
-    readOnly
-    className="w-full p-2 bg-neutral-900 text-white rounded border border-neutral-800"
-  />
-</div>
-
-            <div>
-  <label className="block text-sm text-gray-400 mb-1">
-    Total P & L
-  </label>
-  <input
-    type="text"
-    value={form.totalPLAmount ?? ""}
-    readOnly
-    className="w-full p-2 bg-neutral-900 text-white rounded border border-neutral-800"
-  />
-</div>
-
+                <label className="block text-sm text-gray-400 mb-1">
+                  Total Revenue Amount
+                </label>
+                <input
+                  type="text"
+                  value={form.totalRevenueAmount ?? ""}
+                  readOnly
+                  className="w-full p-2 bg-neutral-900 text-white rounded border border-neutral-800"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">
+                  Total P & L
+                </label>
+                <input
+                  type="text"
+                  value={form.totalPLAmount ?? ""}
+                  readOnly
+                  className="w-full p-2 bg-neutral-900 text-white rounded border border-neutral-800"
+                />
+              </div>
               <div>
                 <label className="block text-sm text-gray-400 mb-1">
                   P/L Margin %
