@@ -1,5 +1,5 @@
 // src/leasing-info/leasing-info.service.ts
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UpdateLeasingInfoDto } from './dto/update-leasingInfo.dto';
 import { LeasingInfoDto } from './dto/create-leasingInfo.dto';
@@ -66,21 +66,34 @@ async create(data: LeasingInfoDto) {
     });
   }
 
-  update(id: number, data: UpdateLeasingInfoDto) {
+ async update(id: number, data: UpdateLeasingInfoDto) {
+  const existing = await this.prisma.leasingInfo.findUnique({
+    where: { id },
+  });
+
+  if (!existing) {
+    throw new NotFoundException(`LeasingInfo with id ${id} not found`);
+  }
+
   return this.prisma.leasingInfo.update({
     where: { id },
-   data: {
-  ...data,
-  ...(data.onHireDate && { onHireDate: new Date(data.onHireDate) }),
-  ...(data.offHireDate && { offHireDate: new Date(data.offHireDate) }),
-},
-
+    data,
   });
 }
 
-  remove(id: number) {
-    return this.prisma.leasingInfo.delete({
-      where: { id },
-    });
+
+  async remove(id: number) {
+  const existing = await this.prisma.leasingInfo.findUnique({
+    where: { id },
+  });
+
+  if (!existing) {
+    throw new NotFoundException(`LeasingInfo with id ${id} not found`);
   }
+
+  return this.prisma.leasingInfo.delete({
+    where: { id },
+  });
+}
+
 }
