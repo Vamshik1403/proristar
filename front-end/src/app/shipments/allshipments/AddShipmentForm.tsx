@@ -742,11 +742,13 @@ const AddShipmentModal = ({
 
       setSelectOptions({ customer, product: productList, port, agent, depot, shippingTerm });
 
-      // FIX: First set the form with basic data
+      // FIX: First set the form with basic data - properly set customer display name
       const updatedForm = {
         ...form,
         shippingTerm: data.shippingTerm || "",
         customerName: data.custAddressBook?.id?.toString() || "",
+        // FIX: Set the customer display name for the input field
+        customerDisplayName: data.custAddressBook?.companyName || "",
         billingParty: data.billingParty || "",
         rateType: data.rateType || "",
         billingType: data.billingType || "",
