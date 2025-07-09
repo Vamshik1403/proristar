@@ -39,7 +39,7 @@ const AddTariffModal = ({
 
   // Always fetch dropdown data
   useEffect(() => {
-    axios.get("http://localhost:8000/addressbook").then((res) => {
+    axios.get("http://128.199.19.28:8000/addressbook").then((res) => {
       // Change from exact match to includes match
       const terminals = res.data.filter(
        (a: any) =>
@@ -50,7 +50,7 @@ const AddTariffModal = ({
       setAddressBookList(terminals);
     });
 
-    axios.get("http://localhost:8000/currency").then((res) => {
+    axios.get("http://128.199.19.28:8000/currency").then((res) => {
       setCurrencyList(res.data);
     });
   }, []);
@@ -59,7 +59,7 @@ const AddTariffModal = ({
   useEffect(() => {
     if (!form?.tariffCode) {
       axios
-        .get("http://localhost:8000/depot-avg-tariff/next-tariff-code")
+        .get("http://128.199.19.28:8000/depot-avg-tariff/next-tariff-code")
         .then((res) => {
           setForm({
             ...form,
@@ -141,12 +141,12 @@ const AddTariffModal = ({
 
       if (form?.id) {
         await axios.patch(
-          `http://localhost:8000/depot-avg-tariff/${form.id}`,
+          `http://128.199.19.28:8000/depot-avg-tariff/${form.id}`,
           payload
         );
       } else {
         await axios.post(
-          "http://localhost:8000/depot-avg-tariff",
+          "http://128.199.19.28:8000/depot-avg-tariff",
           payload
         );
       }

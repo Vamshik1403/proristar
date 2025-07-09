@@ -16,36 +16,24 @@ const AddQuotationModal = ({
   const [portSuggestions, setPortSuggestions] = useState<any[]>([]);
   const [showPortDropdown, setShowPortDropdown] = useState(false);
   const [showDischargeDropdown, setShowDischargeDropdown] = useState(false);
-  const [expDepots, setExpDepots] = useState<
-    { id: number; companyName: string }[]
-  >([]);
-  const [emptyReturnDepots, setEmptyReturnDepots] = useState<
-    { id: number; companyName: string }[]
-  >([]);
-  const [expAgents, setExpAgents] = useState<
-    { id: number; companyName: string }[]
-  >([]);
-  const [impHandlingAgents, setImpHandlingAgents] = useState<
-    { id: number; companyName: string }[]
-  >([]);
-  const [transhipmentPortSuggestions, setTranshipmentPortSuggestions] =
-    useState<any[]>([]);
-  const [showTranshipmentDropdown, setShowTranshipmentDropdown] =
-    useState(false);
+  const [expDepots, setExpDepots] = useState<{ id: number; companyName: string }[]>([]);
+  const [emptyReturnDepots, setEmptyReturnDepots] = useState<{ id: number; companyName: string }[]>([]);
+  const [expAgents, setExpAgents] = useState<{ id: number; companyName: string }[]>([]);
+  const [impHandlingAgents, setImpHandlingAgents] = useState<{ id: number; companyName: string }[]>([]);
+  const [transhipmentPortSuggestions, setTranshipmentPortSuggestions] = useState<any[]>([]);
+  const [showTranshipmentDropdown, setShowTranshipmentDropdown] = useState(false);
   const [trsHandlingAgents, setTrsHandlingAgents] = useState<any[]>([]);
+  const [productList, setProductList] = useState<any[]>([]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Required field validations
     const requiredFields = [
-      { field: "productId", message: "Please select a product" },
-      { field: "customerId", message: "Please select a customer" },
-      { field: "portOfLoadingId", message: "Please select a port of loading" },
-      {
-        field: "portOfDischargeId",
-        message: "Please select a port of discharge",
-      },
+      { field: 'productId', message: 'Please select a product' },
+      { field: 'customerId', message: 'Please select a customer' },
+      { field: 'portOfLoadingId', message: 'Please select a port of loading' },
+      { field: 'portOfDischargeId', message: 'Please select a port of discharge' }
     ];
 
     for (const { field, message } of requiredFields) {
@@ -56,8 +44,7 @@ const AddQuotationModal = ({
     }
 
     // Ensure none of the string fields are null
-    const ensureString = (value: any) =>
-      value === null || value === undefined ? "" : value;
+    const ensureString = (value: any) => value === null || value === undefined ? '' : value;
 
     // Use existing dates for edit mode or set new dates for new records
     let effectiveDate, validTillDate;
@@ -78,38 +65,36 @@ const AddQuotationModal = ({
       status: form.status ? "ACTIVE" : "INACTIVE",
       effectiveDate: effectiveDate,
       validTillDate: validTillDate,
-      shippingTerm: form.shippingTerm || "",
+      shippingTerm: form.shippingTerm || '',
       custAddressBookId: Number(form.customerId),
-      billingParty: form.billingParty || "",
-      rateType: form.rateType || "",
-      billingType: form.billingType || "",
+      billingParty: form.billingParty || '',
+      rateType: form.rateType || '',
+      billingType: form.billingType || '',
       productId: Number(form.productId),
       polPortId: Number(form.portOfLoadingId),
       podPortId: Number(form.portOfDischargeId),
-      polFreeDays: form.expFreeDays || "",
-      podFreeDays: form.impFreeDays || "",
-      polDetentionRate: form.expDetentionRate || "",
-      podDetentionRate: form.impDetentionRate || "",
+      polFreeDays: form.expFreeDays || '',
+      podFreeDays: form.impFreeDays || '',
+      polDetentionRate: form.expDetentionRate || '',
+      podDetentionRate: form.impDetentionRate || '',
       expDepotAddressBookId: Number(form.expDepotId),
       emptyReturnAddressBookId: Number(form.emptyReturnDepot),
       expHandlingAgentAddressBookId: Number(form.expHAgentId),
       impHandlingAgentAddressBookId: Number(form.impHAgentId),
-      transitDays: form.transitDays || "",
-      transhipmentPortId: form.enableTranshipmentPort
-        ? Number(form.transhipmentPortId)
-        : null,
+      transitDays: form.transitDays || '',
+      transhipmentPortId: form.enableTranshipmentPort ? Number(form.transhipmentPortId) : null,
       transhipmentHandlingAgentAddressBookId: form.enableTranshipmentPort
         ? Number(form.transhipmentAgentId)
         : null,
       slotRate: ensureString(form.slotRate),
       depotAvgCost: ensureString(form.depotAvgCost),
-      leasingCost: form.leasingCost,
-      depotCleaningCost: ensureString(form.depotCleaningCost),
+      leasingCost: form.leasingCost ?? "",
+      depotCleaningCost: ensureString(form.depotCleaningCost) ?? "",
       terminalHandlingFee: ensureString(form.terminalHandlingFee),
-      containerPreparationCost: form.containerPreparationCost,
+      containerPreparationCost: form.containerPreparationCost || "",
       expAgencyCommission: ensureString(form.expAgencyCommission),
       impAgencyCommission: ensureString(form.impAgencyCommission),
-      expCollectionCharges: ensureString(form.expCollection),
+      expCollectionCharges: ensureString(form.expCollection) ?? "",
       impCollectionCharges: ensureString(form.impCollection),
       totalCost: ensureString(form.totalCost),
       sellingAmount: ensureString(form.sellingAmount),
@@ -121,8 +106,8 @@ const AddQuotationModal = ({
     try {
       const method = form.id ? "PATCH" : "POST";
       const url = form.id
-        ? `http://localhost:8000/quotations/${form.id}`
-        : "http://localhost:8000/quotations";
+        ? `http://128.199.19.28:8000/quotations/${form.id}`
+        : "http://128.199.19.28:8000/quotations";
 
       const res = await fetch(url, {
         method,
@@ -145,11 +130,12 @@ const AddQuotationModal = ({
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
-        const res = await fetch("http://localhost:8000/addressbook");
+        const res = await fetch("http://128.199.19.28:8000/addressbook");
         const data = await res.json();
         const customers = data.filter(
           (entry: any) =>
-            entry.businessType && entry.businessType.includes("Customer")
+            entry.businessType &&
+            entry.businessType.includes("Customer")
         );
         setCustomerSuggestions(customers);
       } catch (err) {
@@ -178,7 +164,7 @@ const AddQuotationModal = ({
     const fetchNextRef = async () => {
       try {
         if (!form.quotationRef) {
-          const res = await fetch("http://localhost:8000/quotations/next-ref");
+          const res = await fetch("http://128.199.19.28:8000/quotations/next-ref");
           const data = await res.json();
           setForm((prev: any) => ({
             ...prev,
@@ -195,7 +181,7 @@ const AddQuotationModal = ({
 
   const fetchProducts = async (searchTerm: string) => {
     try {
-      const res = await fetch("http://localhost:8000/products");
+      const res = await fetch("http://128.199.19.28:8000/products");
       const data = await res.json();
 
       const filtered = data.filter((product: any) =>
@@ -209,7 +195,7 @@ const AddQuotationModal = ({
 
   const fetchPorts = async (searchTerm: string) => {
     try {
-      const res = await fetch("http://localhost:8000/ports");
+      const res = await fetch("http://128.199.19.28:8000/ports");
       const data = await res.json();
 
       const filtered = data.filter((port: any) =>
@@ -223,9 +209,8 @@ const AddQuotationModal = ({
 
   const fetchExpDepotsByPort = async (portId: number) => {
     try {
-      const res = await fetch("http://localhost:8000/addressbook");
+      const res = await fetch("http://128.199.19.28:8000/addressbook");
       const data = await res.json();
-      console.log("Fetched AddressBook:", data);
 
       const filtered = data.filter((entry: any) => {
         const businessType = (entry.businessType || "").toLowerCase();
@@ -241,7 +226,6 @@ const AddQuotationModal = ({
         return isDepotOrCY && linkedToPort;
       });
 
-      console.log("Filtered Exp Depots:", filtered);
       setExpDepots(filtered);
     } catch (err) {
       console.error("Failed to fetch Exp. Depots:", err);
@@ -258,15 +242,13 @@ const AddQuotationModal = ({
 
   const fetchEmptyReturnDepotsByPort = async (portId: number) => {
     try {
-      const res = await fetch("http://localhost:8000/addressbook");
+      const res = await fetch("http://128.199.19.28:8000/addressbook");
       const data = await res.json();
-      console.log("Fetched address book data:", data); // ✅ check actual data
 
       const filtered = data.filter((entry: any) => {
         const businessType = (entry.businessType || "").toLowerCase();
         const isDepotOrCY =
-          businessType.includes("deport terminal") ||
-          businessType.includes("cy terminal");
+          businessType.includes("deport terminal") || businessType.includes("cy terminal");
 
         const linkedToPort =
           Array.isArray(entry.businessPorts) &&
@@ -275,12 +257,14 @@ const AddQuotationModal = ({
         return isDepotOrCY && linkedToPort;
       });
 
-      console.log("Filtered Depots:", filtered); // ✅ check final result
       setEmptyReturnDepots(filtered);
     } catch (err) {
       console.error("Failed to fetch empty return depots:", err);
     }
   };
+
+
+
 
   useEffect(() => {
     if (form.portOfDischargeId) {
@@ -292,7 +276,7 @@ const AddQuotationModal = ({
 
   const fetchExpHandlingAgentsByPort = async (portId: number) => {
     try {
-      const res = await fetch("http://localhost:8000/addressbook");
+      const res = await fetch("http://128.199.19.28:8000/addressbook");
       const data = await res.json();
 
       const filtered = data.filter((entry: any) => {
@@ -323,7 +307,7 @@ const AddQuotationModal = ({
 
   const fetchImpHandlingAgentsByPort = async (portId: number) => {
     try {
-      const res = await fetch("http://localhost:8000/addressbook");
+      const res = await fetch("http://128.199.19.28:8000/addressbook");
       const data = await res.json();
 
       const filtered = data.filter((entry: any) => {
@@ -353,7 +337,7 @@ const AddQuotationModal = ({
 
   const fetchTranshipmentPorts = async (search: string) => {
     try {
-      const res = await fetch(`http://localhost:8000/ports`);
+      const res = await fetch(`http://128.199.19.28:8000/ports`);
       const data = await res.json();
       const filtered = data.filter((p: any) =>
         p.portName.toLowerCase().includes(search.toLowerCase())
@@ -365,7 +349,7 @@ const AddQuotationModal = ({
   };
   const fetchTrsHandlingAgents = async (portId: number) => {
     try {
-      const res = await fetch("http://localhost:8000/addressbook");
+      const res = await fetch("http://128.199.19.28:8000/addressbook");
       const data = await res.json();
       const filtered = data.filter((entry: any) => {
         const isHandlingAgent = entry.businessType
@@ -394,14 +378,13 @@ const AddQuotationModal = ({
 
   const calculateLeasingCost = async (product: any) => {
     try {
-      const res = await fetch("http://localhost:8000/container-lease-tariff");
+      const res = await fetch("http://128.199.19.28:8000/container-lease-tariff");
       const data = await res.json();
 
-      const matchedTariff = data.find(
-        (t: any) =>
-          t.containerCategory === product.containerCategory &&
-          t.containerType === product.containerType &&
-          t.containerClass === product.classType
+      const matchedTariff = data.find((t: any) =>
+        t.containerCategory === product.containerCategory &&
+        t.containerType === product.containerType &&
+        t.containerClass === product.classType
       );
 
       if (!matchedTariff) {
@@ -446,7 +429,7 @@ const AddQuotationModal = ({
 
     const totalRevenue = selling + expCollection + impCollection;
     const totalPL = selling - totalCost;
-    const plMargin = selling ? ((totalPL / selling) * 100).toFixed(2) : "0";
+    const plMargin = selling ? ((totalPL / selling) * 100).toFixed(2) : '0';
 
     setForm((prev: any) => ({
       ...prev,
@@ -469,6 +452,8 @@ const AddQuotationModal = ({
     form.impCollection,
   ]);
 
+
+
   useEffect(() => {
     const recalcIfApplicable = async () => {
       if (
@@ -490,7 +475,10 @@ const AddQuotationModal = ({
 
   useEffect(() => {
     setForm((prev: any) => ({ ...prev, leasingCost: "" }));
+
   }, [form.productId]);
+
+
 
   useEffect(() => {
     const { productId, portOfDischargeId, emptyReturnDepot } = form;
@@ -504,6 +492,7 @@ const AddQuotationModal = ({
       return;
     }
 
+
     const calculateDepotCleaningCost = async () => {
       const { productId, portOfDischargeId, emptyReturnDepot } = form;
 
@@ -511,8 +500,8 @@ const AddQuotationModal = ({
 
       try {
         const [res, exchangeRes] = await Promise.all([
-          fetch("http://localhost:8000/depot-cleaning-tariff-cost"),
-          fetch("http://localhost:8000/exchange-rates"),
+          fetch("http://128.199.19.28:8000/depot-cleaning-tariff-cost"),
+          fetch("http://128.199.19.28:8000/exchange-rates"),
         ]);
 
         const [data, exchangeRateData] = await Promise.all([
@@ -520,11 +509,10 @@ const AddQuotationModal = ({
           exchangeRes.json(),
         ]);
 
-        const matched = data.find(
-          (item: any) =>
-            Number(item.productId) === Number(productId) &&
-            Number(item.portId) === Number(portOfDischargeId) &&
-            Number(item.addressBookId) === Number(emptyReturnDepot)
+        const matched = data.find((item: any) =>
+          Number(item.productId) === Number(productId) &&
+          Number(item.portId) === Number(portOfDischargeId) &&
+          Number(item.addressBookId) === Number(emptyReturnDepot)
         );
 
         if (matched) {
@@ -537,7 +525,7 @@ const AddQuotationModal = ({
 
           const rate = exchange ? parseFloat(exchange.exchangeRate || "1") : 1;
           const variance = exchange ? parseFloat(exchange.variance || "0") : 0;
-          const adjustedRate = rate + (rate * variance) / 100;
+          const adjustedRate = rate + (rate * variance / 100);
 
           const finalCleaningCost = total * adjustedRate;
 
@@ -564,13 +552,14 @@ const AddQuotationModal = ({
     calculateDepotCleaningCost();
   }, [form.productId, form.portOfDischargeId, form.emptyReturnDepot]);
 
+
   useEffect(() => {
     const fetchDepotAvgTariff = async () => {
       try {
         const [tariffRes, currencyRes, exchangeRateRes] = await Promise.all([
-          fetch("http://localhost:8000/depot-avg-tariff"),
-          fetch("http://localhost:8000/currency"),
-          fetch("http://localhost:8000/exchange-rates"),
+          fetch("http://128.199.19.28:8000/depot-avg-tariff"),
+          fetch("http://128.199.19.28:8000/currency"),
+          fetch("http://128.199.19.28:8000/exchange-rates"),
         ]);
 
         const [tariffData, currencyData, exchangeRateData] = await Promise.all([
@@ -599,7 +588,7 @@ const AddQuotationModal = ({
 
           const rate = parseFloat(exchange.exchangeRate || "1");
           const variance = parseFloat(exchange.variance || "0");
-          const adjustedRate = rate + (rate * variance) / 100;
+          const adjustedRate = rate + (rate * variance / 100);
 
           return total * adjustedRate;
         };
@@ -608,10 +597,7 @@ const AddQuotationModal = ({
         if (!form.portOfDischargeId || !form.emptyReturnDepot) return;
 
         // Only use POD (port of discharge) and its depot
-        const total2 = getAdjustedTotal(
-          form.portOfDischargeId,
-          form.emptyReturnDepot
-        );
+        const total2 = getAdjustedTotal(form.portOfDischargeId, form.emptyReturnDepot);
 
         setForm((prev: any) => ({
           ...prev,
@@ -627,19 +613,22 @@ const AddQuotationModal = ({
     };
 
     fetchDepotAvgTariff(); // ✅ Now it's inside useEffect
-  }, [form.portOfDischargeId, form.emptyReturnDepot]);
+  }, [
+    form.portOfDischargeId,
+    form.emptyReturnDepot,
+  ]);
+
 
   useEffect(() => {
     // Special handling for edit mode to load all dependent data
     if (form.isEditing) {
       // Load customer suggestions
       if (form.customerId) {
-        fetch("http://localhost:8000/addressbook")
-          .then((res) => res.json())
-          .then((data) => {
+        fetch("http://128.199.19.28:8000/addressbook")
+          .then(res => res.json())
+          .then(data => {
             const customers = data.filter(
-              (entry: any) =>
-                entry.businessType && entry.businessType.includes("Customer")
+              (entry: any) => entry.businessType && entry.businessType.includes("Customer")
             );
             setCustomerSuggestions(customers);
           });
@@ -647,31 +636,32 @@ const AddQuotationModal = ({
 
       // Load product data
       if (form.productId) {
-        fetchProducts(form.productName || "");
+        fetchProducts(form.productName || '');
       }
 
       // Load port data and related entities
       if (form.portOfLoadingId) {
-        fetchPorts(form.portOfLoading || "");
+        fetchPorts(form.portOfLoading || '');
         fetchExpDepotsByPort(Number(form.portOfLoadingId));
         fetchExpHandlingAgentsByPort(Number(form.portOfLoadingId));
       }
 
       if (form.portOfDischargeId) {
-        fetchPorts(form.portOfDischarge || "");
+        fetchPorts(form.portOfDischarge || '');
         fetchEmptyReturnDepotsByPort(Number(form.portOfDischargeId));
         fetchImpHandlingAgentsByPort(Number(form.portOfDischargeId));
       }
 
       // Load transhipment data if applicable
       if (form.enableTranshipmentPort && form.transhipmentPortId) {
-        fetchTranshipmentPorts(form.transhipmentPortName || "");
+        fetchTranshipmentPorts(form.transhipmentPortName || '');
         fetchTrsHandlingAgents(Number(form.transhipmentPortId));
       }
 
       if (form.product) {
         calculateLeasingCost(form.product);
       }
+
     }
   }, [form.isEditing]); // Only run when isEditing changes
 
@@ -690,8 +680,8 @@ const AddQuotationModal = ({
 
       try {
         const [res, exchangeRes] = await Promise.all([
-          fetch("http://localhost:8000/handling-agent-tariff-cost"),
-          fetch("http://localhost:8000/exchange-rates"),
+          fetch("http://128.199.19.28:8000/handling-agent-tariff-cost"),
+          fetch("http://128.199.19.28:8000/exchange-rates"),
         ]);
 
         const [data, exchangeRateData] = await Promise.all([
@@ -715,7 +705,7 @@ const AddQuotationModal = ({
 
           const rate = exchange ? parseFloat(exchange.exchangeRate || "1") : 1;
           const variance = exchange ? parseFloat(exchange.variance || "0") : 0;
-          const adjustedRate = rate + (rate * variance) / 100;
+          const adjustedRate = rate + (rate * variance / 100);
 
           const finalCommission = total * adjustedRate;
 
@@ -741,6 +731,7 @@ const AddQuotationModal = ({
     fetchExpAgencyCommission();
   }, [form.portOfLoadingId, form.expHAgentId]);
 
+
   useEffect(() => {
     const fetchImpAgencyCommission = async () => {
       const portId = form.portOfDischargeId;
@@ -756,8 +747,8 @@ const AddQuotationModal = ({
 
       try {
         const [res, exchangeRes] = await Promise.all([
-          fetch("http://localhost:8000/handling-agent-tariff-cost"),
-          fetch("http://localhost:8000/exchange-rates"),
+          fetch("http://128.199.19.28:8000/handling-agent-tariff-cost"),
+          fetch("http://128.199.19.28:8000/exchange-rates"),
         ]);
 
         const [data, exchangeRateData] = await Promise.all([
@@ -781,7 +772,7 @@ const AddQuotationModal = ({
 
           const rate = exchange ? parseFloat(exchange.exchangeRate || "1") : 1;
           const variance = exchange ? parseFloat(exchange.variance || "0") : 0;
-          const adjustedRate = rate + (rate * variance) / 100;
+          const adjustedRate = rate + (rate * variance / 100);
 
           const finalCommission = total * adjustedRate;
 
@@ -806,6 +797,43 @@ const AddQuotationModal = ({
 
     fetchImpAgencyCommission();
   }, [form.portOfDischargeId, form.impHAgentId]);
+
+
+
+  useEffect(() => {
+    // Fetch all products once for use in leasing calculation
+    const fetchAllProducts = async () => {
+      try {
+        const res = await fetch("http://128.199.19.28:8000/products");
+        const data = await res.json();
+        setProductList(data);
+      } catch (error) {
+        console.error("Failed to fetch product list:", error);
+        setProductList([]);
+      }
+    };
+    fetchAllProducts();
+  }, []);
+
+  useEffect(() => {
+    if (
+      form.isEditing &&
+      form.productId &&
+      form.expFreeDays !== undefined &&
+      form.impFreeDays !== undefined &&
+      form.transitDays !== undefined &&
+      productList.length > 0
+    ) {
+      const product = productList.find(p => p.id === Number(form.productId));
+      if (product) {
+        calculateLeasingCost(product);
+      } else {
+        console.warn("Product not found for leasing calculation.");
+      }
+    }
+  }, [form.isEditing, form.productId, form.expFreeDays, form.impFreeDays, form.transitDays, productList]);
+
+
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 backdrop-blur-sm">
@@ -954,14 +982,10 @@ const AddQuotationModal = ({
                       </li>
                     ))}
                   {customerSuggestions.filter((c) =>
-                    c.companyName
-                      .toLowerCase()
-                      .includes(form.customerName?.toLowerCase())
+                    c.companyName.toLowerCase().includes(form.customerName?.toLowerCase())
                   ).length === 0 && (
-                    <li className="px-3 py-1 text-gray-400 text-sm">
-                      No match found
-                    </li>
-                  )}
+                      <li className="px-3 py-1 text-gray-400 text-sm">No match found</li>
+                    )}
                 </ul>
               )}
             </div>
@@ -1020,9 +1044,7 @@ const AddQuotationModal = ({
 
             {/* Product Name */}
             <div className="relative">
-              <label className="block text-sm text-gray-400 mb-1">
-                Product Name
-              </label>
+              <label className="block text-sm text-gray-400 mb-1">Product Name</label>
               <input
                 type="text"
                 value={form.productName || ""}
@@ -1074,15 +1096,12 @@ const AddQuotationModal = ({
                         setShowProductDropdown(false);
 
                         try {
-                          const res = await fetch(
-                            "http://localhost:8000/container-lease-tariff"
-                          );
+                          const res = await fetch("http://128.199.19.28:8000/container-lease-tariff");
                           const leaseTariffs = await res.json();
 
                           const matchedLease = leaseTariffs.find(
                             (lease: any) =>
-                              lease.containerCategory ===
-                                product.containerCategory &&
+                              lease.containerCategory === product.containerCategory &&
                               lease.containerType === product.containerType &&
                               lease.containerClass === product.classType
                           );
@@ -1090,13 +1109,8 @@ const AddQuotationModal = ({
                           if (matchedLease) {
                             const exp = parseInt(form.expFreeDays || "0", 10);
                             const imp = parseInt(form.impFreeDays || "0", 10);
-                            const transit = parseInt(
-                              form.transitDays || "0",
-                              10
-                            );
-                            const rent = parseFloat(
-                              matchedLease.leaseRentPerDay || "0"
-                            );
+                            const transit = parseInt(form.transitDays || "0", 10);
+                            const rent = parseFloat(matchedLease.leaseRentPerDay || "0");
 
                             const leasingCost = (exp + imp + transit) * rent;
 
@@ -1111,10 +1125,7 @@ const AddQuotationModal = ({
                             }));
                           }
                         } catch (error) {
-                          console.error(
-                            "Failed to fetch container lease tariff:",
-                            error
-                          );
+                          console.error("Failed to fetch container lease tariff:", error);
                         }
                       }}
                       className="px-3 py-1 hover:bg-neutral-800 cursor-pointer text-sm text-white"
@@ -1162,8 +1173,7 @@ const AddQuotationModal = ({
                   setTimeout(() => setShowPortDropdown(false), 100);
                 }}
                 className="w-full p-2 bg-neutral-900 text-white rounded border border-neutral-800"
-                placeholder="Start typing port of loading..."
-              />
+                placeholder="Start typing port of loading..." />
 
               {showPortDropdown && portSuggestions.length > 0 && (
                 <ul className="absolute z-10 w-full bg-neutral-900 border text-white border-neutral-800 rounded mt-1 max-h-40 overflow-y-auto">
@@ -1313,9 +1323,7 @@ const AddQuotationModal = ({
                 value={form.expDepotId || ""}
                 onChange={(e) => {
                   const selectedId = Number(e.target.value);
-                  const selectedDepot = expDepots.find(
-                    (d: any) => d.id === selectedId
-                  );
+                  const selectedDepot = expDepots.find((d: any) => d.id === selectedId);
                   setForm({
                     ...form,
                     expDepotId: selectedId,
@@ -1333,6 +1341,7 @@ const AddQuotationModal = ({
               </select>
             </div>
 
+
             {/* Empty Return Depot */}
             <div>
               <label className="block text-sm text-gray-400 mb-1">
@@ -1343,9 +1352,7 @@ const AddQuotationModal = ({
                 value={form.emptyReturnDepot || ""}
                 onChange={(e) => {
                   const selectedId = Number(e.target.value);
-                  const selectedDepot = emptyReturnDepots.find(
-                    (d) => d.id === selectedId
-                  );
+                  const selectedDepot = emptyReturnDepots.find((d) => d.id === selectedId);
                   setForm({
                     ...form,
                     emptyReturnDepot: selectedId,
@@ -1363,6 +1370,8 @@ const AddQuotationModal = ({
               </select>
             </div>
 
+
+
             {/* Exp. H. Agent Name */}
             <div>
               <label className="block text-sm text-gray-400 mb-1">
@@ -1372,9 +1381,7 @@ const AddQuotationModal = ({
                 value={form.expHAgentId || ""}
                 onChange={(e) => {
                   const selectedId = Number(e.target.value);
-                  const selected = expAgents.find(
-                    (a: any) => a.id === selectedId
-                  );
+                  const selected = expAgents.find((a: any) => a.id === selectedId);
                   setForm({
                     ...form,
                     expHAgentId: selectedId,
@@ -1390,7 +1397,9 @@ const AddQuotationModal = ({
                   </option>
                 ))}
               </select>
+
             </div>
+
 
             {/* Imp. H. Agent Name */}
             <div>
@@ -1401,9 +1410,7 @@ const AddQuotationModal = ({
                 value={form.impHAgentId || ""}
                 onChange={(e) => {
                   const selectedId = Number(e.target.value);
-                  const selected = impHandlingAgents.find(
-                    (a: any) => a.id === selectedId
-                  );
+                  const selected = impHandlingAgents.find((a: any) => a.id === selectedId);
                   setForm({
                     ...form,
                     impHAgentId: selectedId,
@@ -1412,6 +1419,7 @@ const AddQuotationModal = ({
                 }}
                 className="w-full p-2 bg-neutral-900 text-white rounded border border-neutral-800"
               >
+
                 <option value="">Select</option>
                 {impHandlingAgents.map((agent: any) => (
                   <option key={agent.id} value={agent.id}>
@@ -1419,6 +1427,7 @@ const AddQuotationModal = ({
                   </option>
                 ))}
               </select>
+
             </div>
 
             <hr className="border-t border-gray-600 my-4 col-span-2" />
@@ -1486,42 +1495,34 @@ const AddQuotationModal = ({
                       }}
                       onFocus={() => {
                         if ((form.transhipmentPortName || "").length > 1) {
-                          fetchTranshipmentPorts(
-                            form.transhipmentPortName || ""
-                          );
+                          fetchTranshipmentPorts(form.transhipmentPortName || "");
                           setShowTranshipmentDropdown(true);
                         }
                       }}
-                      onBlur={() =>
-                        setTimeout(
-                          () => setShowTranshipmentDropdown(false),
-                          150
-                        )
-                      }
+                      onBlur={() => setTimeout(() => setShowTranshipmentDropdown(false), 150)}
                       className="w-full p-2 bg-neutral-900 text-white rounded border border-neutral-800"
                       placeholder="Start typing transhipment port..."
                     />
-                    {showTranshipmentDropdown &&
-                      transhipmentPortSuggestions.length > 0 && (
-                        <ul className="absolute z-10 w-full bg-neutral-900 border text-white border-neutral-800 rounded mt-1 max-h-40 overflow-y-auto">
-                          {transhipmentPortSuggestions.map((port) => (
-                            <li
-                              key={port.id}
-                              onMouseDown={() => {
-                                setForm((prev: any) => ({
-                                  ...prev,
-                                  transhipmentPortName: port.portName,
-                                  transhipmentPortId: port.id,
-                                }));
-                                setShowTranshipmentDropdown(false);
-                              }}
-                              className="px-3 py-1 hover:bg-neutral-800 cursor-pointer text-sm text-white"
-                            >
-                              {port.portName}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
+                    {showTranshipmentDropdown && transhipmentPortSuggestions.length > 0 && (
+                      <ul className="absolute z-10 w-full bg-neutral-900 border text-white border-neutral-800 rounded mt-1 max-h-40 overflow-y-auto">
+                        {transhipmentPortSuggestions.map((port) => (
+                          <li
+                            key={port.id}
+                            onMouseDown={() => {
+                              setForm((prev: any) => ({
+                                ...prev,
+                                transhipmentPortName: port.portName,
+                                transhipmentPortId: port.id,
+                              }));
+                              setShowTranshipmentDropdown(false);
+                            }}
+                            className="px-3 py-1 hover:bg-neutral-800 cursor-pointer text-sm text-white"
+                          >
+                            {port.portName}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                 </div>
 
@@ -1535,9 +1536,7 @@ const AddQuotationModal = ({
                       value={form.transhipmentAgentId || ""}
                       onChange={(e) => {
                         const selectedId = Number(e.target.value);
-                        const selected = trsHandlingAgents.find(
-                          (a) => a.id === selectedId
-                        );
+                        const selected = trsHandlingAgents.find(a => a.id === selectedId);
                         setForm({
                           ...form,
                           transhipmentAgentId: selectedId,
@@ -1555,6 +1554,7 @@ const AddQuotationModal = ({
                     </select>
                   </div>
                 </div>
+
               </>
             )}
 
@@ -1586,6 +1586,7 @@ const AddQuotationModal = ({
               />
             </div>
 
+
             <div>
               <label className="block text-sm text-gray-400 mb-1">
                 Leasing Cost
@@ -1599,6 +1600,7 @@ const AddQuotationModal = ({
               />
             </div>
 
+
             <div>
               <label className="block text-sm text-gray-400 mb-1">
                 Depot Cleaning Cost
@@ -1606,9 +1608,7 @@ const AddQuotationModal = ({
               <input
                 type="text"
                 value={form.depotCleaningCost ?? ""}
-                onChange={(e) =>
-                  setForm({ ...form, depotCleaningCost: e.target.value })
-                }
+                onChange={(e) => setForm({ ...form, depotCleaningCost: e.target.value })}
                 className="w-full p-2 bg-neutral-900 text-white rounded border border-neutral-800"
                 placeholder={form.isEditing ? "" : "Auto-calculated"}
                 readOnly
@@ -1643,6 +1643,8 @@ const AddQuotationModal = ({
             </div>
 
             <hr className="border-t border-gray-600 my-4 col-span-2" />
+
+
 
             <div>
               <label className="block text-sm text-gray-400 mb-1">
@@ -1687,6 +1689,7 @@ const AddQuotationModal = ({
                   setForm({ ...form, expCollection: e.target.value })
                 }
                 className="w-full p-2 bg-neutral-900 text-white rounded border border-neutral-800"
+
               />
             </div>
 
@@ -1720,6 +1723,8 @@ const AddQuotationModal = ({
                   className="w-full p-2 bg-gray-800 text-white rounded border border-gray-700"
                 />
               </div>
+
+
               <div>
                 <label className="block text-sm text-gray-400 mb-1">
                   Selling Amount (Ocean Freight)
@@ -1744,6 +1749,7 @@ const AddQuotationModal = ({
                   className="w-full p-2 bg-neutral-900 text-white rounded border border-neutral-800"
                 />
               </div>
+
               <div>
                 <label className="block text-sm text-gray-400 mb-1">
                   Total P & L
@@ -1755,6 +1761,7 @@ const AddQuotationModal = ({
                   className="w-full p-2 bg-neutral-900 text-white rounded border border-neutral-800"
                 />
               </div>
+
               <div>
                 <label className="block text-sm text-gray-400 mb-1">
                   P/L Margin %
@@ -1775,7 +1782,6 @@ const AddQuotationModal = ({
 
             <hr className="border-t border-gray-600 my-4 col-span-2" />
 
-            {/* Continue mapping remaining fields similarly based on your form design */}
           </div>
 
           <div className="flex justify-center gap-3 mt-8">

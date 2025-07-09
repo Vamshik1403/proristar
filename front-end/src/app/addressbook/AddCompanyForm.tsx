@@ -65,7 +65,7 @@ const AddCompanyForm = ({
   useEffect(() => {
     const fetchCountries = async () => {
       try {
-        const response = await fetch("http://localhost:8000/country");
+        const response = await fetch("http://128.199.19.28:8000/country");
         if (!response.ok) {
           throw new Error("Failed to fetch countries");
         }
@@ -89,7 +89,7 @@ const AddCompanyForm = ({
 
   const fetchNextRefId = async () => {
     try {
-      const res = await fetch("http://localhost:8000/addressbook/next-ref-id");
+      const res = await fetch("http://128.199.19.28:8000/addressbook/next-ref-id");
       const data = await res.json();
       setFormData((prev) => ({ ...prev, refId: data.refId }));
     } catch (error) {
@@ -119,7 +119,7 @@ const AddCompanyForm = ({
   // Fetch ports from API
   useEffect(() => {
     const fetchPorts = async () => {
-      const response = await axios.get("http://localhost:8000/ports");
+      const response = await axios.get("http://128.199.19.28:8000/ports");
       setAllPorts(response.data);
     };
     fetchPorts();
@@ -283,13 +283,13 @@ const AddCompanyForm = ({
       if (editData && editData.id) {
         // ✅ Use PUT to update
         await axios.patch(
-          `http://localhost:8000/addressbook/${editData.id}`,
+          `http://128.199.19.28:8000/addressbook/${editData.id}`,
           payload
         );
         alert("Company updated successfully");
       } else {
         // ✅ Use POST to add
-        await axios.post("http://localhost:8000/addressbook", payload);
+        await axios.post("http://128.199.19.28:8000/addressbook", payload);
         alert("Company added successfully");
       }
       onClose();
