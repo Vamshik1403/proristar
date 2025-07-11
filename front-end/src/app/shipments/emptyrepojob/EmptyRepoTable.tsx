@@ -60,7 +60,7 @@ const EmptyRepo = () => {
   // Fetch empty repo jobs
   const fetchEmptyRepoJobs = async () => {
     try {
-      const res = await axios.get('http://localhost:8000/empty-repo-job');
+      const res = await axios.get('http://128.199.19.28:8000/empty-repo-job');
       setEmptyRepoJobs(res.data);
     } catch (err) {
       console.error('Failed to fetch empty repo jobs', err);
@@ -77,7 +77,7 @@ const EmptyRepo = () => {
     if (!confirmDelete) return;
 
     try {
-      await axios.delete(`http://localhost:8000/empty-repo-job/${id}`);
+      await axios.delete(`http://128.199.19.28:8000/empty-repo-job/${id}`);
       await fetchEmptyRepoJobs();
     } catch (err) {
       console.error('Failed to delete empty repo job', err);
@@ -104,7 +104,7 @@ const EmptyRepo = () => {
     let transhipmentPortName = "";
     if (job.transhipmentPortId) {
       try {
-        const res = await fetch(`http://localhost:8000/ports/${job.transhipmentPortId}`);
+        const res = await fetch(`http://128.199.19.28:8000/ports/${job.transhipmentPortId}`);
         const port = await res.json();
         transhipmentPortName = port.portName || "";
       } catch (err) {

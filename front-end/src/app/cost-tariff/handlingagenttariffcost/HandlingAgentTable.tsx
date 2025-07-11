@@ -35,23 +35,24 @@ const StatusBadge = ({ status }: { status: string }) => {
 const CostTariffPage = () => {
   const [showModal, setShowModal] = useState(false);
   const [tariffData, setTariffData] = useState<any[]>([]);
-  const [form, setForm] = useState({
-    id: undefined,
-    status: "Active",
-    tariffCode: "",
-    handlingAgentName: "",
-    servicePort: "",
-    currency: "USD",
-    "IMP Commission": 0,
-    "EXP Commission": 0,
-    "Transhipment Commission": 0,
-    "Empty Repo Commission": 0,
-    "Detention Commission": 0,
-  });
+ const [form, setForm] = useState({
+  id: undefined,
+  status: "Active",
+  tariffCode: "",
+  handlingAgentName: "",
+  servicePort: "",
+  currency: "USD",
+  impCommission: 0,
+  expCommission: 0,
+  transhipmentCommission: 0,
+  emptyRepoCommission: 0,
+  detentionCommission: 0,
+});
+
 
   const fetchTariffData = async () => {
     try {
-      const response = await axios.get("http://localhost:8000/handling-agent-tariff-cost");
+      const response = await axios.get("http://128.199.19.28:8000/handling-agent-tariff-cost");
       setTariffData(response.data);
     } catch (error) {
       console.error("Failed to fetch tariff data", error);
@@ -65,7 +66,7 @@ const CostTariffPage = () => {
   const handleDelete = async (id: number) => {
     if (window.confirm("Are you sure you want to delete this record?")) {
       try {
-        await axios.delete(`http://localhost:8000/handling-agent-tariff-cost/${id}`);
+        await axios.delete(`http://128.199.19.28:8000/handling-agent-tariff-cost/${id}`);
         fetchTariffData();
       } catch (err) {
         console.error("Delete failed:", err);
@@ -89,11 +90,11 @@ const CostTariffPage = () => {
                 handlingAgentName: "",
                 servicePort: "",
                 currency: "USD",
-                "IMP Commission": 0,
-                "EXP Commission": 0,
-                "Transhipment Commission": 0,
-                "Empty Repo Commission": 0,
-                "Detention Commission": 0,
+               impCommission: 0,
+  expCommission: 0,
+  transhipmentCommission: 0,
+  emptyRepoCommission: 0,
+  detentionCommission: 0,
               });
               setShowModal(true);
             }}
@@ -157,11 +158,11 @@ const CostTariffPage = () => {
                               handlingAgentName: item.addressBookId?.toString() || "",
                               servicePort: item.portId?.toString() || "",
                               currency: item.currencyId?.toString() || "",
-                              "IMP Commission": item.impCommission,
-                              "EXP Commission": item.expCommission,
-                              "Transhipment Commission": item.transhipmentCommission,
-                              "Empty Repo Commission": item.emptyRepoCommission,
-                              "Detention Commission": item.detentionCommission,
+                              impCommission: item.impCommission,
+                              expCommission: item.expCommission,
+                              transhipmentCommission: item.transhipmentCommission,
+                              emptyRepoCommission: item.emptyRepoCommission,
+                              detentionCommission: item.detentionCommission,
                             });
                             setShowModal(true);
                           }}

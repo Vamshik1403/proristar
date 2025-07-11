@@ -86,7 +86,7 @@ const AddShipmentModal = ({
   // Function to fetch EXP handling agents by port
   const fetchExpHandlingAgentsByPort = async (portId: number) => {
     try {
-      const res = await fetch("http://localhost:8000/addressbook");
+      const res = await fetch("http://128.199.19.28:8000/addressbook");
       const data = await res.json();
 
       const filtered = data.filter((entry: any) => {
@@ -111,7 +111,7 @@ const AddShipmentModal = ({
   // Function to fetch IMP handling agents by port
   const fetchImpHandlingAgentsByPort = async (portId: number) => {
     try {
-      const res = await fetch("http://localhost:8000/addressbook");
+      const res = await fetch("http://128.199.19.28:8000/addressbook");
       const data = await res.json();
 
       const filtered = data.filter((entry: any) => {
@@ -136,7 +136,7 @@ const AddShipmentModal = ({
   // Function to fetch empty return depots by port
   const fetchEmptyReturnDepotsByPort = async (portId: number) => {
     try {
-      const res = await fetch("http://localhost:8000/addressbook");
+      const res = await fetch("http://128.199.19.28:8000/addressbook");
       const data = await res.json();
 
       const filtered = data.filter((entry: any) => {
@@ -163,7 +163,7 @@ const AddShipmentModal = ({
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
-        const res = await fetch("http://localhost:8000/addressbook");
+        const res = await fetch("http://128.199.19.28:8000/addressbook");
         const data = await res.json();
         const customers = data.filter((entry: any) => 
           entry.businessType?.includes("Customer")
@@ -180,7 +180,7 @@ const AddShipmentModal = ({
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await fetch("http://localhost:8000/products");
+        const res = await fetch("http://128.199.19.28:8000/products");
         const data = await res.json();
         setProductSuggestions(data);
       } catch (err) {
@@ -194,7 +194,7 @@ const AddShipmentModal = ({
   useEffect(() => {
     const fetchPorts = async () => {
       try {
-        const res = await fetch("http://localhost:8000/ports");
+        const res = await fetch("http://128.199.19.28:8000/ports");
         const data = await res.json();
         setPortSuggestions(data);
       } catch (err) {
@@ -208,7 +208,7 @@ const AddShipmentModal = ({
   useEffect(() => {
     const fetchAgents = async () => {
       try {
-        const res = await fetch("http://localhost:8000/addressbook");
+        const res = await fetch("http://128.199.19.28:8000/addressbook");
         const data = await res.json();
         const agents = data.filter((entry: any) =>
           entry.businessType?.includes("Handling Agent") ||
@@ -226,7 +226,7 @@ const AddShipmentModal = ({
   useEffect(() => {
     const fetchDepots = async () => {
       try {
-        const res = await fetch("http://localhost:8000/addressbook");
+        const res = await fetch("http://128.199.19.28:8000/addressbook");
         const data = await res.json();
         const depots = data.filter((entry: any) =>
           entry.businessType?.includes("Depot") ||
@@ -245,7 +245,7 @@ const AddShipmentModal = ({
   useEffect(() => {
     const fetchMovements = async () => {
       try {
-        const res = await axios.get("http://localhost:8000/movement-history");
+        const res = await axios.get("http://128.199.19.28:8000/movement-history");
 
         // Group by containerNumber inside inventory
         const grouped: { [key: string]: any[] } = {};
@@ -364,9 +364,9 @@ const AddShipmentModal = ({
       try {
         // Fetch all options in parallel
         const [addressBookRes, productsRes, portsRes] = await Promise.all([
-          fetch("http://localhost:8000/addressbook"),
-          fetch("http://localhost:8000/products"),
-          fetch("http://localhost:8000/ports")
+          fetch("http://128.199.19.28:8000/addressbook"),
+          fetch("http://128.199.19.28:8000/products"),
+          fetch("http://128.199.19.28:8000/ports")
         ]);
 
         const [addressBookData, productsData, portsData] = await Promise.all([
@@ -501,7 +501,7 @@ const AddShipmentModal = ({
           if (form.consigneeId || form.consigneeAddressBookId) {
             try {
               const consigneeId = form.consigneeAddressBookId || form.consigneeId;
-              const consigneeRes = await fetch(`http://localhost:8000/addressbook/${consigneeId}`);
+              const consigneeRes = await fetch(`http://128.199.19.28:8000/addressbook/${consigneeId}`);
               const consigneeData = await consigneeRes.json();
               setForm((prev: any) => ({ ...prev, consigneeName: consigneeData.companyName }));
             } catch (err) {
@@ -512,7 +512,7 @@ const AddShipmentModal = ({
           if (form.shipperId || form.shipperAddressBookId) {
             try {
               const shipperId = form.shipperAddressBookId || form.shipperId;
-              const shipperRes = await fetch(`http://localhost:8000/addressbook/${shipperId}`);
+              const shipperRes = await fetch(`http://128.199.19.28:8000/addressbook/${shipperId}`);
               const shipperData = await shipperRes.json();
               setForm((prev: any) => ({ ...prev, shipperName: shipperData.companyName }));
             } catch (err) {
@@ -523,7 +523,7 @@ const AddShipmentModal = ({
           if (form.carrierId || form.carrierAddressBookId) {
             try {
               const carrierId = form.carrierAddressBookId || form.carrierId;
-              const carrierRes = await fetch(`http://localhost:8000/addressbook/${carrierId}`);
+              const carrierRes = await fetch(`http://128.199.19.28:8000/addressbook/${carrierId}`);
               const carrierData = await carrierRes.json();
               setForm((prev: any) => ({ ...prev, carrierName: carrierData.companyName }));
             } catch (err) {
@@ -633,11 +633,11 @@ const AddShipmentModal = ({
       
       if (form.id) {
         // For PATCH (Edit)
-        await axios.patch(`http://localhost:8000/shipment/${form.id}`, payload);
+        await axios.patch(`http://128.199.19.28:8000/shipment/${form.id}`, payload);
         alert("Shipment updated successfully!");
       } else {
         // For POST (New)
-        await axios.post("http://localhost:8000/shipment", payload);
+        await axios.post("http://128.199.19.28:8000/shipment", payload);
         alert("Shipment created successfully!");
       }
 
@@ -657,7 +657,7 @@ const AddShipmentModal = ({
     if (!form.quotationRefNo) return;
     try {
       const res = await axios.get(
-        `http://localhost:8000/shipment/quotation/${encodeURIComponent(
+        `http://128.199.19.28:8000/shipment/quotation/${encodeURIComponent(
           form.quotationRefNo
         )}`
       );
@@ -690,7 +690,7 @@ const AddShipmentModal = ({
       const agentMap = new Map<number, string>();
 
       const fetchAgentNameById = async (id: number) => {
-        const res = await axios.get(`http://localhost:8000/addressbook/${id}`);
+        const res = await axios.get(`http://128.199.19.28:8000/addressbook/${id}`);
         return res.data.companyName;
       };
 
@@ -818,7 +818,7 @@ const AddShipmentModal = ({
   useEffect(() => {
     const fetchNextJobNumber = async () => {
       try {
-        const res = await axios.get("http://localhost:8000/shipment/next-job-number");
+        const res = await axios.get("http://128.199.19.28:8000/shipment/next-job-number");
         setForm((prev: any) => ({
           ...prev,
           jobNumber: res.data.jobNumber || "",
@@ -837,7 +837,7 @@ const AddShipmentModal = ({
   useEffect(() => {
     const fetchConsignee: () => Promise<void> = async () => {
       try {
-        const res = await fetch("http://localhost:8000/addressbook");
+        const res = await fetch("http://128.199.19.28:8000/addressbook");
         const data = await res.json();
         const consignee = data.filter(
           (entry: any) =>
@@ -857,7 +857,7 @@ const AddShipmentModal = ({
   useEffect(() => {
     const fetchShipper: () => Promise<void> = async () => {
       try {
-        const res = await fetch("http://localhost:8000/addressbook");
+        const res = await fetch("http://128.199.19.28:8000/addressbook");
         const data = await res.json();
         const shipper = data.filter(
           (entry: any) =>
@@ -878,7 +878,7 @@ const AddShipmentModal = ({
   useEffect(() => {
     const fetchCarrier: () => Promise<void> = async () => {
       try {
-        const res = await fetch("http://localhost:8000/addressbook");
+        const res = await fetch("http://128.199.19.28:8000/addressbook");
         const data = await res.json();
         const carrier = data.filter(
           (entry: any) =>
@@ -915,7 +915,7 @@ const AddShipmentModal = ({
   useEffect(() => {
     const fetchInventory = async () => {
       try {
-        const res = await fetch("http://localhost:8000/inventory");
+        const res = await fetch("http://128.199.19.28:8000/inventory");
         const data = await res.json();
         setAllInventories(data);
       } catch (error) {

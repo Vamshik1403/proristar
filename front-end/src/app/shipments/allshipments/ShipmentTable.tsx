@@ -102,7 +102,7 @@ const AllShipmentsPage = () => {
 
   const fetchShipments = async () => {
     try {
-      const res = await axios.get('http://localhost:8000/shipment');
+      const res = await axios.get('http://128.199.19.28:8000/shipment');
       setShipments(res.data);
     } catch (err) {
       console.error('Failed to fetch shipments', err);
@@ -111,7 +111,7 @@ const AllShipmentsPage = () => {
 
   useEffect(() => {
     // Fetch once and log the raw response
-    axios.get('http://localhost:8000/shipment')
+    axios.get('http://128.199.19.28:8000/shipment')
       .then(res => {
         setShipments(res.data);
       })
@@ -123,7 +123,7 @@ const AllShipmentsPage = () => {
     if (!confirmDelete) return;
 
     try {
-      await axios.delete(`http://localhost:8000/shipment/${id}`);
+      await axios.delete(`http://128.199.19.28:8000/shipment/${id}`);
       await fetchShipments();
     } catch (err) {
       console.error('Failed to delete shipment', err);
@@ -232,7 +232,7 @@ const AllShipmentsPage = () => {
 
   useEffect(() => {
     // Fetch allMovements data from backend (update the URL as needed)
-    axios.get('http://localhost:8000/shipment')
+    axios.get('http://128.199.19.28:8000/shipment')
       .then(res => setAllMovements(res.data))
       .catch(err => console.error('Failed to fetch movements', err));
   }, []);

@@ -67,7 +67,7 @@ const AddShipmentModal = ({
   useEffect(() => {
     const fetchMovements = async () => {
       try {
-        const res = await axios.get("http://localhost:8000/movement-history");
+        const res = await axios.get("http://128.199.19.28:8000/movement-history");
 
         // Group by containerNumber inside inventory
         const grouped: { [key: string]: any[] } = {};
@@ -218,11 +218,11 @@ const AddShipmentModal = ({
 
       if (form.id) {
         // For PATCH (Edit)
-        await axios.patch(`http://localhost:8000/empty-repo-job/${form.id}`, payload);
+        await axios.patch(`http://128.199.19.28:8000/empty-repo-job/${form.id}`, payload);
         alert("Empty repo job updated successfully!");
       } else {
         // For POST (New)
-        await axios.post("http://localhost:8000/empty-repo-job", payload);
+        await axios.post("http://128.199.19.28:8000/empty-repo-job", payload);
         alert("Empty repo job created successfully!");
       }
 
@@ -238,7 +238,7 @@ const AddShipmentModal = ({
 
   const fetchPorts = async (searchTerm: string) => {
     try {
-      const res = await fetch("http://localhost:8000/ports");
+      const res = await fetch("http://128.199.19.28:8000/ports");
       const data = await res.json();
 
       const filtered = data.filter((port: any) =>
@@ -252,7 +252,7 @@ const AddShipmentModal = ({
 
   const fetchExpHandlingAgentsByPort = async (portId: number) => {
     try {
-      const res = await fetch("http://localhost:8000/addressbook");
+      const res = await fetch("http://128.199.19.28:8000/addressbook");
       const data = await res.json();
 
       const filtered = data.filter((entry: any) => {
@@ -283,7 +283,7 @@ const AddShipmentModal = ({
 
   const fetchImpHandlingAgentsByPort = async (portId: number) => {
     try {
-      const res = await fetch("http://localhost:8000/addressbook");
+      const res = await fetch("http://128.199.19.28:8000/addressbook");
       const data = await res.json();
 
       const filtered = data.filter((entry: any) => {
@@ -314,7 +314,7 @@ const AddShipmentModal = ({
 
   const fetchTranshipmentPorts = async (search: string) => {
     try {
-      const res = await fetch(`http://localhost:8000/ports`);
+      const res = await fetch(`http://128.199.19.28:8000/ports`);
       const data = await res.json();
       const filtered = data.filter((p: any) =>
         p.portName.toLowerCase().includes(search.toLowerCase())
@@ -328,7 +328,7 @@ const AddShipmentModal = ({
   useEffect(() => {
     const fetchCarrier = async () => {
       try {
-        const res = await fetch("http://localhost:8000/addressbook");
+        const res = await fetch("http://128.199.19.28:8000/addressbook");
         const data = await res.json();
         const carrier = data.filter(
           (entry: any) =>
@@ -346,7 +346,7 @@ const AddShipmentModal = ({
 
   const fetchEmptyReturnDepotsByPort = async (portId: number) => {
   try {
-    const res = await fetch("http://localhost:8000/addressbook");
+    const res = await fetch("http://128.199.19.28:8000/addressbook");
     const data = await res.json();
 
     const filtered = data.filter((entry: any) => {
@@ -381,7 +381,7 @@ const AddShipmentModal = ({
   useEffect(() => {
     const fetchNextJobNumber = async () => {
       try {
-        const res = await axios.get("http://localhost:8000/empty-repo-job/job/next");
+        const res = await axios.get("http://128.199.19.28:8000/empty-repo-job/job/next");
         const jobNumber = res.data.jobNumber || "";
         setForm((prev: any) => ({
           ...prev,
@@ -445,7 +445,7 @@ const AddShipmentModal = ({
       // If we have a transhipment port ID but no name, fetch the port name
       const fetchTranshipmentPortName = async () => {
         try {
-          const res = await fetch(`http://localhost:8000/ports/${form.transhipmentPortId}`);
+          const res = await fetch(`http://128.199.19.28:8000/ports/${form.transhipmentPortId}`);
           const port = await res.json();
           setForm((prev: any) => ({
             ...prev,

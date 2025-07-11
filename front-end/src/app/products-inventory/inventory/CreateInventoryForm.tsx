@@ -270,7 +270,7 @@ const AddInventoryForm: React.FC<InventoryFormProps> = ({
   useEffect(() => {
     const fetchPorts = async () => {
       try {
-        const response = await axios.get("http://localhost:8000/ports");
+        const response = await axios.get("http://128.199.19.28:8000/ports");
         setPorts(response.data);
         setAllPorts(response.data);
         setDataLoadingComplete(prev => ({ ...prev, ports: true }));
@@ -303,7 +303,7 @@ const AddInventoryForm: React.FC<InventoryFormProps> = ({
   useEffect(() => {
     const fetchHireDepots = async () => {
       try {
-        const response = await fetch("http://localhost:8000/addressbook");
+        const response = await fetch("http://128.199.19.28:8000/addressbook");
         const data = await response.json();
         const depotTerminals = data.filter((entry: any) =>
           entry.businessType &&
@@ -333,7 +333,7 @@ const AddInventoryForm: React.FC<InventoryFormProps> = ({
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch("http://localhost:8000/addressbook");
+        const res = await fetch("http://128.199.19.28:8000/addressbook");
         const data = await res.json();
         const leasors = data.filter(
           (entry: any) => entry.businessType && entry.businessType.includes("Leasor")
@@ -388,7 +388,7 @@ const AddInventoryForm: React.FC<InventoryFormProps> = ({
   useEffect(() => {
     const fetchPorts = async () => {
       try {
-        const res = await fetch("http://localhost:8000/ports");
+        const res = await fetch("http://128.199.19.28:8000/ports");
         const data = await res.json();
         setAllPorts(data);
       } catch (err) {
@@ -517,7 +517,7 @@ const AddInventoryForm: React.FC<InventoryFormProps> = ({
     // If it's an existing certificate (has ID), delete from backend
     if (cert.id && !cert.isNew) {
       try {
-        await axios.delete(`http://localhost:8000/tankcertificate/${cert.id}`);
+        await axios.delete(`http://128.199.19.28:8000/tankcertificate/${cert.id}`);
       } catch (error) {
         console.error('Error deleting certificate:', error);
         alert('Failed to delete certificate');
@@ -536,7 +536,7 @@ const AddInventoryForm: React.FC<InventoryFormProps> = ({
     // If it's an existing report (has ID), delete from backend
     if (report.id && !report.isNew) {
       try {
-        await axios.delete(`http://localhost:8000/onhirereport/${report.id}`);
+        await axios.delete(`http://128.199.19.28:8000/onhirereport/${report.id}`);
       } catch (error) {
         console.error('Error deleting report:', error);
         alert('Failed to delete report');
@@ -664,14 +664,14 @@ const AddInventoryForm: React.FC<InventoryFormProps> = ({
         if (record.id && !record.isNew) {
           // Update existing record
           const response = await axios.patch(
-            `http://localhost:8000/leasinginfo/${record.id}`,
+            `http://128.199.19.28:8000/leasinginfo/${record.id}`,
             leasingData
           );
           console.log("Leasing record updated:", response.data);
         } else {
           // Create new record
           const response = await axios.post(
-            "http://localhost:8000/leasinginfo",
+            "http://128.199.19.28:8000/leasinginfo",
             leasingData
           );
         }
@@ -713,7 +713,7 @@ const AddInventoryForm: React.FC<InventoryFormProps> = ({
           try {
             if (cert.id && !cert.isNew) {
               // Update existing certificate with file
-              const response = await axios.patch(`http://localhost:8000/tankcertificate/${cert.id}`, certFormData, {
+              const response = await axios.patch(`http://128.199.19.28:8000/tankcertificate/${cert.id}`, certFormData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
               });
               certificateFilename = response.data.certificate;
@@ -758,7 +758,7 @@ const AddInventoryForm: React.FC<InventoryFormProps> = ({
 
           try {
             // Upload the file first
-            const response = await axios.post('http://localhost:8000/onhirereport/uploads/reports', reportFormData, {
+            const response = await axios.post('http://128.199.19.28:8000/onhirereport/uploads/reports', reportFormData, {
               headers: { 'Content-Type': 'multipart/form-data' }
             });
             reportDocumentName = response.data.filename;
@@ -857,7 +857,7 @@ const AddInventoryForm: React.FC<InventoryFormProps> = ({
       }
 
       if (isEditMode && inventoryId) {
-        const response = await axios.patch(`http://localhost:8000/inventory/${inventoryId}`, payload);
+        const response = await axios.patch(`http://128.199.19.28:8000/inventory/${inventoryId}`, payload);
         createdInventoryId = response.data.id || inventoryId;
 
         // Handle new certificates that need file upload after inventory update
@@ -878,7 +878,7 @@ const AddInventoryForm: React.FC<InventoryFormProps> = ({
             certFormData.append('nextDueDate', cert.nextDueDate);
             certFormData.append('inventoryId', createdInventoryId.toString());
 
-            await axios.post('http://localhost:8000/tankcertificate', certFormData, {
+            await axios.post('http://128.199.19.28:8000/tankcertificate', certFormData, {
               headers: { 'Content-Type': 'multipart/form-data' }
             });
           }
@@ -890,7 +890,7 @@ const AddInventoryForm: React.FC<InventoryFormProps> = ({
         // Ownership changed
         if (originalOwnership !== currentOwnership) {
           for (const record of editData.leasingInfo || []) {
-            await axios.delete(`http://localhost:8000/leasinginfo/${record.id}`);
+            await axios.delete(`http://128.199.19.28:8000/leasinginfo/${record.id}`);
           }
         }
 
@@ -916,18 +916,18 @@ const AddInventoryForm: React.FC<InventoryFormProps> = ({
   originalOwnership === currentOwnership // only try patch if same type
 ) {
   try {
-    await axios.patch(`http://localhost:8000/leasinginfo/${editData.leasingInfo[0].id}`, ownLeasingData);
+    await axios.patch(`http://128.199.19.28:8000/leasinginfo/${editData.leasingInfo[0].id}`, ownLeasingData);
   } catch (err: any) {
     if (err.response?.status === 404) {
       // Fallback to create
-      await axios.post("http://localhost:8000/leasinginfo", ownLeasingData);
+      await axios.post("http://128.199.19.28:8000/leasinginfo", ownLeasingData);
     } else {
       throw err;
     }
   }
 } else {
   // Ownership changed or no leasing record existed
-  await axios.post("http://localhost:8000/leasinginfo", ownLeasingData);
+  await axios.post("http://128.199.19.28:8000/leasinginfo", ownLeasingData);
 }
 
         }
@@ -937,7 +937,7 @@ const AddInventoryForm: React.FC<InventoryFormProps> = ({
         }
 
       } else {
-        const response = await axios.post("http://localhost:8000/inventory", payload);
+        const response = await axios.post("http://128.199.19.28:8000/inventory", payload);
         createdInventoryId = response.data.id;
 
         // Handle new certificates for new inventory
@@ -958,7 +958,7 @@ const AddInventoryForm: React.FC<InventoryFormProps> = ({
             certFormData.append('nextDueDate', cert.nextDueDate);
             certFormData.append('inventoryId', createdInventoryId.toString());
 
-            await axios.post('http://localhost:8000/tankcertificate', certFormData, {
+            await axios.post('http://128.199.19.28:8000/tankcertificate', certFormData, {
               headers: { 'Content-Type': 'multipart/form-data' }
             });
           }
@@ -1632,7 +1632,7 @@ const AddInventoryForm: React.FC<InventoryFormProps> = ({
                         {/* Show PDF link if certificate exists and no new file is selected */}
                         {(cert.certificate || cert.certificateFilename) && !cert.certificateFile && (
                           <a
-                            href={`http://localhost:8000/uploads/certificates/${cert.certificate || cert.certificateFilename}`}
+                            href={`http://128.199.19.28:8000/uploads/certificates/${cert.certificate || cert.certificateFilename}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-xs text-blue-400 hover:text-blue-300 mt-1 flex items-center"
@@ -1728,7 +1728,7 @@ const AddInventoryForm: React.FC<InventoryFormProps> = ({
                         {/* Show PDF link if report document exists and no new file is selected */}
                         {report.reportDocumentName && !report.reportDocument && (
                           <a
-                            href={`http://localhost:8000/uploads/reports/${report.reportDocumentName}`}
+                            href={`http://128.199.19.28:8000/uploads/reports/${report.reportDocumentName}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-xs text-blue-400 hover:text-blue-300 mt-1 flex items-center"

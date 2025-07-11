@@ -11,6 +11,7 @@ export class AddressbookService {
     bankDetails = [],
     businessPorts = [],
     contacts = [],
+    remark="",
     ...scalarFields
   } = dto;
 
@@ -38,6 +39,7 @@ export class AddressbookService {
   return this.prisma.addressBook.create({
     data: {
       ...scalarFields,
+      remark,
       refId: newRefId,
       bankDetails: { create: bankDetails },
       businessPorts: {
