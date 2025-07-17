@@ -584,8 +584,6 @@ const AddInventoryForm: React.FC<InventoryFormProps> = ({
   // Add a new function to submit leasing records
   const handleSubmitLeasingRecords = async (inventoryId: number) => {
     try {
-      console.log("Submitting leasing records for inventory ID:", inventoryId);
-
       for (const record of leasingRecords) {
         // Skip if missing required values
         if (!record.leasingRef || (!record.leasoraddressbookId && !record.leasorName)) {
@@ -768,8 +766,6 @@ const AddInventoryForm: React.FC<InventoryFormProps> = ({
             return;
           }
         }
-
-        // FIX: Just store the processed report data, don't create/update the record yet
         processedReports.push({
           id: report.id || undefined,
           reportDate: report.reportDate,
@@ -794,7 +790,6 @@ const AddInventoryForm: React.FC<InventoryFormProps> = ({
         tareWeight: formData.tareWeight,
         InitialSurveyDate: formData.initialSurveyDate,
         periodicTankCertificates: processedCertificates.filter(c => !c.needsUpload),
-        // FIX: Include the processed reports in payload - this will handle creation/update properly
         onHireReport: processedReports,
         leasingInfo: [],
       };
@@ -964,10 +959,6 @@ const AddInventoryForm: React.FC<InventoryFormProps> = ({
           }
         }
       }
-
-      // debug response
-      console.log("Container saved successfully:", payload);
-
       alert("Container saved successfully!");
       onClose();
    } catch (error: any) {
@@ -977,8 +968,6 @@ const AddInventoryForm: React.FC<InventoryFormProps> = ({
 }
 
   };
-
-
 
   // Add this derived state for easier checks
   const isTank = formData.containerCategory === "Tank";
