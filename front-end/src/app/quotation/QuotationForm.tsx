@@ -263,9 +263,6 @@ const AddQuotationModal = ({
     }
   };
 
-
-
-
   useEffect(() => {
     if (form.portOfDischargeId) {
       fetchEmptyReturnDepotsByPort(form.portOfDischargeId);
@@ -1738,6 +1735,7 @@ const AddQuotationModal = ({
                   className="w-full p-2 bg-neutral-900 text-white rounded border border-neutral-800"
                 />
               </div>
+
               <div>
                 <label className="block text-sm text-gray-400 mb-1">
                   Total Revenue Amount
@@ -1773,6 +1771,7 @@ const AddQuotationModal = ({
                     onChange={(e) =>
                       setForm({ ...form, plMargin: e.target.value })
                     }
+                    readOnly
                     className="w-full p-2 bg-neutral-900 text-white rounded border border-neutral-800 pr-6"
                   />
                   <span className="absolute right-2 top-2 text-white">%</span>
